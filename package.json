@@ -48,10 +48,10 @@
     }
   },
   "devDependencies": {
-    "electron": "^28.3.3",
     "electron-builder": "^24.8.0"
   },
   "dependencies": {
+    "electron": "^37.2.6",
     "electron-store": "^8.2.0",
     "jsdom": "^26.1.0",
     "mathjs": "^11.12.0",

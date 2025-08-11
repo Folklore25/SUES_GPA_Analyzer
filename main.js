@@ -85,10 +85,16 @@ ipcMain.handle('load-course-data', async () => {
   const filePath = path.join(__dirname, 'courses.csv');
   
   try {
+    // 使用带BOM的UTF-8编码读取文件
     const data = await fs.readFile(filePath, 'utf8');
-    return data;
+    // 处理可能的BOM标记
+    let cleanData = data;
+    if (data.charCodeAt(0) === 0xFEFF) {
+      cleanData = data.slice(1);
+    }
+    return cleanData;
   } catch (error) {
-    throw new Error('无法读取课程数据文件');
+    throw new Error('无法读取课程数据文件: ' + error.message);
   }
 });
 

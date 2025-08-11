@@ -169,6 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadAndDisplayCourseData();
         });
     }
+    
+    // 页面加载完成后自动尝试加载数据
+    setTimeout(async () => {
+        try {
+            await loadAndDisplayCourseData();
+        } catch (error) {
+            console.log('自动加载数据失败（可能文件不存在）:', error.message);
+        }
+    }, 1000);
 });
 
 // 选项卡切换功能

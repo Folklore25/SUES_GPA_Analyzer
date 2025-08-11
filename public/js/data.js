@@ -50,19 +50,61 @@ function calculateRequiredGPA(data, targetGPA) {
     return requiredPoints / uncompletedCredits;
 }
 
-// 推荐重修课程
-function recommendRetakeCourses(data, targetGPA) {
-    // 筛选需要重修的课程（未通过的课程）
-    const failedCourses = data.filter(course => course.pass === 'failed');
+
+// 计算课程的重修性价比(IPS)
+function calculateIPS(course, allCourses, targetGPA) {
+    // 计算总学分
+    const totalCredits = allCourses.reduce((sum, c) => {
+        return sum + (parseFloat(c.course_weight) || 0);
+    }, 0);
     
-    // 按绩点排序，绩点低的优先重修
-    failedCourses.sort((a, b) => {
-        const gpaA = parseFloat(a.course_gpa) || 0;
-        const gpaB = parseFloat(b.course_gpa) || 0;
-        return gpaA - gpaB;
+    if (totalCredits === 0) return 0;
+    
+    // 获取当前课程信息
+    const courseCredits = parseFloat(course.course_weight) || 0;
+    const currentGPA = parseFloat(course.course_gpa) || 0;
+    
+    // 计算学分权重
+    const creditWeight = courseCredits / totalCredits;
+    
+    // 计算可达成概率因子
+    const gap = Math.abs(targetGPA - currentGPA);
+    const probabilityFactor = 1 / (1 + 0.2 * gap);
+    
+    // 计算绩点提升空间
+    const gpaImprovementSpace = (targetGPA - currentGPA) * probabilityFactor;
+    
+    // 计算对总GPA的影响系数
+    const impactFactor = (targetGPA - currentGPA) * courseCredits / totalCredits;
+    
+    // 计算IPS值
+    const ips = creditWeight * gpaImprovementSpace * impactFactor;
+    
+    return ips;
+}
+
+// 推荐重修课程（基于IPS算法）
+function recommendRetakeCourses(data, targetGPA) {
+    // 筛选已通过但绩点较低的课程（绩点小于目标GPA的课程）
+    const passedCourses = data.filter(course => {
+        return course.pass === 'passed' &&
+               parseFloat(course.course_gpa) < targetGPA &&
+               parseFloat(course.course_gpa) > 0; // 排除绩点为0的课程
     });
     
-    return failedCourses;
+    // 计算每门课程的IPS值
+    const coursesWithIPS = passedCourses.map(course => {
+        return {
+            ...course,
+            ips: calculateIPS(course, data, targetGPA)
+        };
+    });
+    
+    // 按IPS值降序排序
+    coursesWithIPS.sort((a, b) => b.ips - a.ips);
+    
+    // 选出IPS值最高的7门课程
+    return coursesWithIPS.slice(0, 7);
 }
 
 // 按学分分组课程
@@ -75,7 +117,8 @@ function groupCoursesByCredit(data) {
     };
     
     data.forEach(course => {
-        const credits = parseFloat(course.course_weight) || 0;
+        // 将学分四舍五入到最接近的整数
+        const credits = Math.round(parseFloat(course.course_weight) || 0);
         if (credits in groups) {
             groups[credits].push(course);
         }
@@ -124,12 +167,9 @@ function calculateRequiredGPAAfterRetake(data, targetGPA, retakeCourses) {
 function updateStatistics(data) {
     if (!data || data.length === 0) return;
     
-    // 计算平均绩点
-    const totalGPA = data.reduce((sum, course) => {
-        const gpa = parseFloat(course.course_gpa) || 0;
-        return sum + gpa;
-    }, 0);
-    const avgGPA = (totalGPA / data.length).toFixed(2);
+    // 计算当前GPA（加权平均）
+    const currentGPA = calculateCurrentGPA(data);
+    const avgGPA = currentGPA.toFixed(2);
     
     // 计算总学分
     const totalCredits = data.reduce((sum, course) => {

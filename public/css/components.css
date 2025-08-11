@@ -493,3 +493,23 @@ label {
     font-weight: bold;
     color: var(--color-primary);
 }
+
+/* IPS Info Icon Styles */
+.info-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    font-size: 12px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    cursor: help;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.info-icon:hover {
+    background-color: #0056b3;
+}
