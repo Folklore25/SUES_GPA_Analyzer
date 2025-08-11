@@ -51,6 +51,17 @@
             --color-glass-border: rgba(255, 255, 255, 0.12);
             --shadow-default: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
+        
+        /* 深色主题下的课程表格样式 */
+        :root[data-theme="dark"] .courses-table {
+            background: #000000;
+            color: var(--color-text);
+        }
+        
+        :root[data-theme="dark"] .courses-table th,
+        :root[data-theme="dark"] .courses-table td {
+            border-bottom: 1px solid var(--color-border);
+        }
 
         /* 深色主题背景 */
         :root[data-theme="dark"] body {
@@ -208,8 +219,8 @@
         .capsule-input:focus {
             outline: none;
             border-color: var(--color-primary-light);
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.2);
+            background: #007acc33;
+            box-shadow: 0 0 0 3px #007acc33;
             transform: scale(1.02);
         }
 
@@ -776,43 +787,43 @@
                 });
             }
             
+            // CSV解析函数
+            function parseCSV(csvText) {
+                const lines = csvText.trim().split('\n');
+                const headers = lines[0].split(',');
+                const data = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    if (values.length === headers.length) {
+                        const row = {};
+                        for (let j = 0; j < headers.length; j++) {
+                            // 移除可能存在的BOM标记和引号
+                            let value = values[j].trim();
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.substring(1, value.length - 1);
+                            }
+                            row[headers[j]] = value;
+                        }
+                        data.push(row);
+                    }
+                }
+                
+                return data;
+            }
+            
             // 加载并显示课程数据的函数
             async function loadAndDisplayCourseData() {
                 try {
-                    // 这里应该调用加载CSV数据的函数
-                    // 暂时使用模拟数据
-                    const mockData = [
-                        {
-                            course_name: '高等数学',
-                            course_code: 'MATH101',
-                            course_semester: '2023-秋季',
-                            course_weight: 4,
-                            course_score: '85',
-                            course_gpa: '3.0',
-                            pass: 'passed'
-                        },
-                        {
-                            course_name: '大学英语',
-                            course_code: 'ENG101',
-                            course_semester: '2023-秋季',
-                            course_weight: 3,
-                            course_score: '90',
-                            course_gpa: '3.7',
-                            pass: 'passed'
-                        },
-                        {
-                            course_name: '计算机基础',
-                            course_code: 'CS101',
-                            course_semester: '2023-秋季',
-                            course_weight: 3,
-                            course_score: '75',
-                            course_gpa: '2.0',
-                            pass: 'passed'
-                        }
-                    ];
+                    // 调用API获取CSV数据
+                    const csvData = await window.electronAPI.loadCourseData();
                     
-                    displayCourseData(mockData);
-                    updateStatistics(mockData);
+                    // 解析CSV数据
+                    const parsedData = parseCSV(csvData);
+                    
+                    // 显示数据
+                    displayCourseData(parsedData);
+                    updateStatistics(parsedData);
                 } catch (error) {
                     console.error('加载数据失败:', error);
                     alert('加载数据失败: ' + error.message);
