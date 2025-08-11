@@ -1,0 +1,39 @@
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .login-form {
+        margin: 10px;
+        padding: 30px 20px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .gpa-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .courses-table {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .courses-table th,
+    .courses-table td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+    }
+}
