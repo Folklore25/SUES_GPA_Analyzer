@@ -5,19 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>上海工程技术大学GPA分析工具</title>
     <style>
+        /* 默认主题（浅色主题） */
         :root {
-            --color-primary: #00509e;
+            --color-primary: #007acc;
             --color-primary-light: #007acc;
-            --color-secondary: #8d6e63;
-            --color-background: #f5f5f5;
-            --color-text: #333;
-            --color-text-light: #666;
-            --color-border: rgba(255, 255, 255, 0.3);
-            --color-glass: rgba(255, 255, 255, 0.15);
-            --color-glass-border: rgba(255, 255, 255, 0.2);
-            --shadow-default: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --color-primary-dark: #005a9c;
+            --color-secondary: #03dac6;
+            --color-secondary-light: #66fff8;
+            --color-secondary-dark: #018786;
+            --color-background: #ffffff;
+            --color-surface: #ffffff;
+            --color-on-primary: #ffffff;
+            --color-on-secondary: #000000;
+            --color-text: #000000;
+            --color-text-light: #666666;
+            --color-border: rgba(0, 0, 0, 0.12);
+            --color-glass: rgba(255, 255, 255, 0.7);
+            --color-glass-border: rgba(0, 0, 0, 0.12);
+            --shadow-default: 0 2px 10px rgba(0, 0, 0, 0.1);
             --animation-duration: 0.3s;
             --animation-timing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 浅色主题背景 */
+        :root:not([data-theme="dark"]) body {
+            background: #ffffff;
+        }
+
+        /* 深色主题 */
+        :root[data-theme="dark"] {
+            --color-primary: #bb86fc;
+            --color-primary-light: #efe6ff;
+            --color-primary-dark: #8859ff;
+            --color-secondary: #03dac6;
+            --color-secondary-light: #66fff8;
+            --color-secondary-dark: #018786;
+            --color-background: #121212;
+            --color-surface: #1e1e1e;
+            --color-on-primary: #000000;
+            --color-on-secondary: #000000;
+            --color-text: #ffffff;
+            --color-text-light: #aaaaaa;
+            --color-border: rgba(255, 255, 255, 0.12);
+            --color-glass: rgba(30, 30, 30, 0.7);
+            --color-glass-border: rgba(255, 255, 255, 0.12);
+            --shadow-default: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 深色主题背景 */
+        :root[data-theme="dark"] body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
         }
 
         /* 页面加载动画 */
@@ -45,17 +82,51 @@
             }
         }
 
+        /* 主题切换按钮样式 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-default);
+            transition: all var(--animation-duration) var(--animation-timing);
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-toggle-icon {
+            font-size: 20px;
+            color: var(--color-text);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #003366, #00509e);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             color: var(--color-text);
             animation: fadeIn 0.6s var(--animation-timing);
+        }
+
+        /* 浅色主题背景 */
+        :root:not([data-theme="dark"]) body {
+            background: linear-gradient(135deg, #ffffff, #a8c7e7);
         }
 
         .container {
@@ -65,7 +136,7 @@
         }
 
         h1 {
-            color: white;
+            color: var(--color-text);
             text-align: center;
             margin-bottom: 30px;
             font-weight: 600;
@@ -113,7 +184,7 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: white;
+            color: var(--color-text);
             font-weight: 500;
         }
 
@@ -124,14 +195,14 @@
             padding-block: 0.8em;
             border-radius: 999em; /* Creates perfect capsule shape */
             border: 1px solid var(--color-border);
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+            background: var(--color-glass);
+            color: var(--color-text);
             box-sizing: border-box;
             transition: all var(--animation-duration) var(--animation-timing);
         }
 
         .capsule-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--color-text-light);
         }
 
         .capsule-input:focus {
@@ -144,7 +215,7 @@
 
         .capsule-btn {
             background: var(--color-primary);
-            color: white;
+            color: var(--color-on-primary);
             border: none;
             font-size: 1rem;
             padding-inline: 1.5em;
@@ -202,7 +273,7 @@
 
         .checkbox-group label {
             margin-bottom: 0;
-            color: white;
+            color: var(--color-text);
             cursor: pointer;
         }
 
@@ -216,7 +287,7 @@
         }
 
         .progress p {
-            color: white;
+            color: var(--color-text);
             margin: 0 0 10px 0;
         }
 
@@ -225,7 +296,7 @@
         }
 
         #progress-text {
-            color: white;
+            color: var(--color-text);
             font-size: 0.9rem;
             opacity: 0.8;
             animation: pulse 1.5s infinite;
@@ -254,11 +325,16 @@
     </style>
 </head>
 <body>
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
+        <span class="theme-toggle-icon">☀️</span>
+    </button>
+    
     <div class="container">
         <h1>上海工程技术大学GPA分析工具</h1>
         
         <div id="login-section" class="login-form" role="form" aria-labelledby="login-heading">
-            <h2 id="login-heading" style="color: white; text-align: center; margin-bottom: 30px;">学生登录</h2>
+            <h2 id="login-heading" style="color: #000000; text-align: center; margin-bottom: 30px;">学生登录</h2>
             <div class="form-group">
                 <label for="username">学号：</label>
                 <input type="text" id="username" class="capsule-input" placeholder="请输入学号" aria-required="true">
@@ -360,6 +436,38 @@
         // 监听爬虫进度更新
         window.electronAPI.onCrawlerProgress((data) => {
             document.getElementById('progress-text').textContent = data.message || '';
+        });
+        
+        // 主题切换功能
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleIcon = document.querySelector('.theme-toggle-icon');
+        
+        // 检查本地存储中的主题设置
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            themeToggleIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        } else {
+            // 检查系统主题偏好
+            const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+            if (prefersDarkScheme.matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggleIcon.textContent = '🌙';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                themeToggleIcon.textContent = '☀️';
+            }
+        }
+        
+        // 主题切换按钮点击事件
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            // 切换主题
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggleIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
         });
     </script>
 </body>
