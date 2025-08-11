@@ -1,0 +1,60 @@
+{
+  "name": "sues-gpa-analyzer",
+  "version": "1.0.0",
+  "description": "上海工程技术大学GPA分析工具",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder",
+    "test": "jest"
+  },
+  "keywords": [
+    "gpa",
+    "sues",
+    "electron",
+    "crawler"
+  ],
+  "author": "Folklore25",
+  "license": "MIT",
+  "build": {
+    "appId": "com.sues.gpa-analyzer",
+    "productName": "SUES GPA Analyzer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "src/**/*",
+      "public/**/*"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.8.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "mathjs": "^11.12.0",
+    "papaparse": "^5.5.3",
+    "playwright": "^1.54.2"
+  }
+}

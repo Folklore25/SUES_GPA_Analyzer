@@ -1,0 +1,13 @@
+{
+  "browser": {
+    "headless": false,
+    "args": [
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--start-maximized"
+    ]
+  },
+  "timeout": 30000,
+  "retry": 3
+}

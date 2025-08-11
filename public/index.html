@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上海工程技术大学GPA分析工具</title>
+    <style>
+        :root {
+            --color-primary: #00509e;
+            --color-primary-light: #007acc;
+            --color-secondary: #8d6e63;
+            --color-background: #f5f5f5;
+            --color-text: #333;
+            --color-text-light: #666;
+            --color-border: rgba(255, 255, 255, 0.3);
+            --color-glass: rgba(255, 255, 255, 0.15);
+            --color-glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-default: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --animation-duration: 0.3s;
+            --animation-timing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 页面加载动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 进度条动画 */
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #003366, #00509e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--color-text);
+            animation: fadeIn 0.6s var(--animation-timing);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.6s var(--animation-timing);
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            background: var(--color-glass);
+            backdrop-filter: blur(20px) saturate(180%) brightness(110%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(110%);
+            border: 1px solid var(--color-glass-border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-default);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s var(--animation-timing);
+            animation-delay: 0.2s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        .login-form::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            z-index: -1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeIn 0.6s var(--animation-timing);
+            animation-delay: 0.3s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .capsule-input {
+            width: 100%;
+            font-size: 1rem;
+            padding-inline: 1.5em;
+            padding-block: 0.8em;
+            border-radius: 999em; /* Creates perfect capsule shape */
+            border: 1px solid var(--color-border);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            box-sizing: border-box;
+            transition: all var(--animation-duration) var(--animation-timing);
+        }
+
+        .capsule-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .capsule-input:focus {
+            outline: none;
+            border-color: var(--color-primary-light);
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.2);
+            transform: scale(1.02);
+        }
+
+        .capsule-btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            font-size: 1rem;
+            padding-inline: 1.5em;
+            padding-block: 0.8em;
+            border-radius: 999em; /* Creates perfect capsule shape */
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all var(--animation-duration) var(--animation-timing);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capsule-btn:hover {
+            background: var(--color-primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .capsule-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .capsule-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .capsule-btn:disabled:hover {
+            transform: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            animation: fadeIn 0.6s var(--animation-timing);
+            animation-delay: 0.4s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: auto;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            color: white;
+            cursor: pointer;
+        }
+
+        .progress {
+            margin-top: 20px;
+            text-align: center;
+            animation: fadeIn 0.6s var(--animation-timing);
+            animation-delay: 0.5s;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+
+        .progress p {
+            color: white;
+            margin: 0 0 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #progress-text {
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .login-form {
+                margin: 10px;
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* 减少动画支持 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>上海工程技术大学GPA分析工具</h1>
+        
+        <div id="login-section" class="login-form" role="form" aria-labelledby="login-heading">
+            <h2 id="login-heading" style="color: white; text-align: center; margin-bottom: 30px;">学生登录</h2>
+            <div class="form-group">
+                <label for="username">学号：</label>
+                <input type="text" id="username" class="capsule-input" placeholder="请输入学号" aria-required="true">
+            </div>
+            <div class="form-group">
+                <label for="password">密码：</label>
+                <input type="password" id="password" class="capsule-input" placeholder="请输入密码" aria-required="true">
+            </div>
+            <div class="form-group">
+                <label for="url">培养方案URL：</label>
+                <input type="text" id="url" class="capsule-input" placeholder="请输入培养方案URL" aria-required="true">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="remember-me" aria-describedby="remember-me-description">
+                <label for="remember-me" id="remember-me-description">保留我的用户信息</label>
+            </div>
+            <button id="login-btn" class="capsule-btn" aria-busy="false">登录系统</button>
+            
+            <div id="progress" class="progress hidden">
+                <p>正在获取培养方案数据...</p>
+                <div id="progress-text"></div>
+            </div>
+        </div>
+        
+        <div id="gpa-section" class="hidden">
+            <!-- GPA分析界面将在这里渲染 -->
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时自动填充用户信息
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const userInfo = await window.electronAPI.loadUserInfo();
+                if (userInfo && userInfo.username) {
+                    document.getElementById('username').value = userInfo.username;
+                    document.getElementById('password').value = userInfo.password || '';
+                    document.getElementById('url').value = userInfo.url || '';
+                    document.getElementById('remember-me').checked = true;
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        });
+
+        // 登录按钮事件处理
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const url = document.getElementById('url').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            
+            if (!username || !password || !url) {
+                alert('请输入完整的登录信息');
+                return;
+            }
+            
+            // 显示进度条
+            document.getElementById('progress').classList.remove('hidden');
+            document.getElementById('login-btn').disabled = true;
+            
+            try {
+                // 保存用户信息（如果勾选了保留用户信息）
+                if (rememberMe) {
+                    await window.electronAPI.saveUserInfo({
+                        username,
+                        password,
+                        url
+                    });
+                } else {
+                    // 如果没有勾选保留用户信息，则清除已保存的用户信息
+                    await window.electronAPI.saveUserInfo({});
+                }
+                
+                // 启动爬虫
+                const result = await window.electronAPI.startCrawler({
+                    username,
+                    password,
+                    url
+                });
+                
+                // 隐藏进度条
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('login-btn').disabled = false;
+                
+                // 显示结果或跳转到GPA分析界面
+                alert('数据获取完成！');
+                console.log('爬虫结果:', result);
+            } catch (error) {
+                // 隐藏进度条
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('login-btn').disabled = false;
+                
+                alert('获取数据失败: ' + error.message);
+                console.error('爬虫错误:', error);
+            }
+        });
+        
+        // 监听爬虫进度更新
+        window.electronAPI.onCrawlerProgress((data) => {
+            document.getElementById('progress-text').textContent = data.message || '';
+        });
+    </script>
+</body>
+</html>
