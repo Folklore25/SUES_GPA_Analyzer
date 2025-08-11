@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
+const { JSDOM } = require('jsdom');
 const config = require('./config.json');
 
 // 发送消息给父进程
@@ -11,19 +12,45 @@ function sendMessage(type, data) {
 }
 
 // 课程数据解析函数
-function parseCourseRow(row) {
+function parseCourseRow(rowElement) {
   try {
-    // 这里需要根据实际HTML结构调整解析逻辑
-    // 暂时返回示例数据
+    // 获取所有td元素
+    const tds = rowElement.querySelectorAll('td');
+    
+    if (tds.length < 7) {
+      console.log('警告：行数据不完整');
+      return null;
+    }
+    
+    // 获取课程名称（从data-text属性）
+    const courseNameElement = rowElement.querySelector('.course-name');
+    const courseName = courseNameElement ? (courseNameElement.getAttribute('data-text') || '').trim() : '';
+    
+    // 获取成绩和绩点
+    const score = tds[5] ? tds[5].textContent.trim() : '--';
+    const gpa = tds[6] ? tds[6].textContent.trim() : '--';
+    
+    // 处理数值转换
+    let courseWeight = 0;
+    try {
+      courseWeight = parseFloat(tds[4].textContent.trim()) || 0;
+    } catch (e) {
+      courseWeight = 0;
+    }
+    
+    // 获取通过状态
+    const passStatus = rowElement.getAttribute('data-result') || '';
+    const pass = passStatus.toUpperCase() === 'PASSED' ? 'passed' : 'failed';
+    
     return {
-      course_name: row.courseName || '',
-      course_code: row.courseCode || '',
-      course_semester: row.semester || '',
-      course_attribute: row.attribute || '',
-      course_weight: parseFloat(row.weight) || 0,
-      course_score: row.score || '--',
-      course_gpa: row.gpa || '--',
-      pass: row.pass || 'failed'
+      course_name: courseName,
+      course_code: tds[1] ? tds[1].textContent.trim() : '',
+      course_semester: tds[2] ? tds[2].textContent.trim() : '',
+      course_attribute: tds[3] ? tds[3].textContent.trim() : '',
+      course_weight: courseWeight,
+      course_score: score,
+      course_gpa: gpa,
+      pass: pass
     };
   } catch (error) {
     console.error('解析课程行数据失败:', error);
@@ -68,7 +95,7 @@ async function saveToCSV(data, filename = 'courses.csv') {
 
     // 保存文件
     const filePath = path.join(__dirname, '..', '..', filename);
-    await fs.writeFile(filePath, csvContent, 'utf8');
+    await fs.writeFile(filePath, '\uFEFF' + csvContent, 'utf8');
     console.log(`数据已成功保存到 ${filePath}`);
     return true;
   } catch (error) {
@@ -208,30 +235,24 @@ class CoursesScraper {
       // 获取课程表内容
       const tableHtml = await this.getCourseTableContent();
       
-      // 这里需要解析HTML并提取课程数据
-      // 暂时使用示例数据
-      const coursesData = [
-        {
-          course_name: '高等数学',
-          course_code: 'MATH101',
-          course_semester: '2023-秋季',
-          course_attribute: '必修',
-          course_weight: 4,
-          course_score: '85',
-          course_gpa: '3.0',
-          pass: 'passed'
-        },
-        {
-          course_name: '大学英语',
-          course_code: 'ENG101',
-          course_semester: '2023-秋季',
-          course_attribute: '必修',
-          course_weight: 3,
-          course_score: '90',
-          course_gpa: '3.7',
-          pass: 'passed'
+      // 解析HTML内容
+      const coursesData = [];
+      if (tableHtml) {
+        // 使用JSDOM解析HTML
+        const dom = new JSDOM(tableHtml);
+        const doc = dom.window.document;
+        
+        // 查找所有包含课程数据的行
+        const courseRows = doc.querySelectorAll('tr[data-result]');
+        
+        // 解析每一行数据
+        for (const row of courseRows) {
+          const courseData = parseCourseRow(row);
+          if (courseData) {
+            coursesData.push(courseData);
+          }
         }
-      ];
+      }
       
       sendMessage('progress', { message: `成功爬取到 ${coursesData.length} 条课程数据` });
       
@@ -292,8 +313,8 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('未处理的Promise拒绝:', reason);
-  sendMessage('error', { 
-    success: false, 
-    message: `未处理的Promise拒绝: ${reason}` 
+  sendMessage('error', {
+    success: false,
+    message: `未处理的Promise拒绝: ${reason}`
   });
 });

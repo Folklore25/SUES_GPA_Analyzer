@@ -213,6 +213,40 @@
             transform: scale(1.02);
         }
 
+        /* 密码输入框样式 */
+        .password-container {
+            position: relative;
+        }
+
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input {
+            padding-right: 2.5em;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1em;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            font-size: 1.2em;
+            opacity: 0.7;
+            transition: opacity var(--animation-duration) var(--animation-timing);
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+        }
+
+        .password-toggle:active {
+            transform: scale(1.1);
+        }
+
         .capsule-btn {
             background: var(--color-primary);
             color: var(--color-on-primary);
@@ -322,6 +356,151 @@
                 transition-duration: 0.01ms !important;
             }
         }
+        
+        /* GPA分析界面样式 */
+        .gpa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--color-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid var(--color-glass-border);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+        }
+        
+        .gpa-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--color-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--color-glass-border);
+            box-shadow: var(--shadow-default);
+            transition: transform var(--animation-duration) var(--animation-timing);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: var(--color-text);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        
+        /* 课程表格 */
+        .courses-section {
+            background: var(--color-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--color-glass-border);
+            box-shadow: var(--shadow-default);
+        }
+        
+        .courses-section h3 {
+            margin-top: 0;
+            color: var(--color-text);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .courses-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .courses-table th,
+        .courses-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .courses-table th {
+            background: var(--color-primary);
+            color: var(--color-on-primary);
+            font-weight: 600;
+        }
+        
+        .courses-table tbody tr:hover {
+            background: rgba(0, 122, 204, 0.1);
+        }
+        
+        .course-status.passed {
+            color: #4caf50;
+            font-weight: 600;
+        }
+        
+        .course-status.failed {
+            color: #f44336;
+            font-weight: 600;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .gpa-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .courses-table {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .courses-table th,
+            .courses-table td {
+                padding: 8px 10px;
+                font-size: 0.8rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -339,9 +518,12 @@
                 <label for="username">学号：</label>
                 <input type="text" id="username" class="capsule-input" placeholder="请输入学号" aria-required="true">
             </div>
-            <div class="form-group">
+            <div class="form-group password-container">
                 <label for="password">密码：</label>
-                <input type="password" id="password" class="capsule-input" placeholder="请输入密码" aria-required="true">
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" class="capsule-input password-input" placeholder="请输入密码" aria-required="true">
+                    <span class="password-toggle" id="password-toggle" aria-label="显示/隐藏密码">👁️</span>
+                </div>
             </div>
             <div class="form-group">
                 <label for="url">培养方案URL：</label>
@@ -360,7 +542,64 @@
         </div>
         
         <div id="gpa-section" class="hidden">
-            <!-- GPA分析界面将在这里渲染 -->
+            <!-- GPA分析主界面 -->
+            <div class="gpa-header">
+                <h2>GPA分析工具</h2>
+                <div class="header-actions">
+                    <button id="fetch-data-btn" class="capsule-btn">获取数据</button>
+                    <button id="refresh-data-btn" class="capsule-btn" style="margin-left: 10px;">刷新数据</button>
+                </div>
+            </div>
+            
+            <div id="gpa-progress" class="progress hidden">
+                <p>正在获取培养方案数据...</p>
+                <div id="gpa-progress-text"></div>
+            </div>
+            
+            <div class="gpa-dashboard">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>平均绩点</h3>
+                        <div class="stat-value" id="avg-gpa">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>总学分</h3>
+                        <div class="stat-value" id="total-credits">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>通过课程</h3>
+                        <div class="stat-value" id="passed-courses">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>需要重修</h3>
+                        <div class="stat-value" id="need-retake">--</div>
+                    </div>
+                </div>
+                
+                <!-- 课程表格 -->
+                <div class="courses-section">
+                    <h3>课程详情</h3>
+                    <div class="table-container">
+                        <table id="courses-table" class="courses-table">
+                            <thead>
+                                <tr>
+                                    <th>课程名称</th>
+                                    <th>课程代码</th>
+                                    <th>学期</th>
+                                    <th>学分</th>
+                                    <th>成绩</th>
+                                    <th>绩点</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-table-body">
+                                <!-- 课程数据将在这里渲染 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -392,10 +631,6 @@
                 return;
             }
             
-            // 显示进度条
-            document.getElementById('progress').classList.remove('hidden');
-            document.getElementById('login-btn').disabled = true;
-            
             try {
                 // 保存用户信息（如果勾选了保留用户信息）
                 if (rememberMe) {
@@ -409,27 +644,16 @@
                     await window.electronAPI.saveUserInfo({});
                 }
                 
-                // 启动爬虫
-                const result = await window.electronAPI.startCrawler({
-                    username,
-                    password,
-                    url
-                });
+                // 隐藏登录界面，显示GPA分析界面
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('gpa-section').classList.remove('hidden');
                 
-                // 隐藏进度条
-                document.getElementById('progress').classList.add('hidden');
-                document.getElementById('login-btn').disabled = false;
+                // 更新页面标题
+                document.querySelector('h1').textContent = 'GPA分析工具';
                 
-                // 显示结果或跳转到GPA分析界面
-                alert('数据获取完成！');
-                console.log('爬虫结果:', result);
             } catch (error) {
-                // 隐藏进度条
-                document.getElementById('progress').classList.add('hidden');
-                document.getElementById('login-btn').disabled = false;
-                
-                alert('获取数据失败: ' + error.message);
-                console.error('爬虫错误:', error);
+                alert('登录失败: ' + error.message);
+                console.error('登录错误:', error);
             }
         });
         
@@ -459,6 +683,18 @@
             }
         }
         
+        // 密码显示/隐藏功能
+        const passwordToggle = document.getElementById('password-toggle');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordToggle && passwordInput) {
+            passwordToggle.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                passwordToggle.textContent = type === 'password' ? '👁️' : '🔒';
+            });
+        }
+
         // 主题切换按钮点击事件
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -468,6 +704,174 @@
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             themeToggleIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+        });
+        
+        // GPA分析界面功能
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取数据按钮事件
+            const fetchDataBtn = document.getElementById('fetch-data-btn');
+            const refreshDataBtn = document.getElementById('refresh-data-btn');
+            const gpaProgress = document.getElementById('gpa-progress');
+            const gpaProgressText = document.getElementById('gpa-progress-text');
+            
+            if (fetchDataBtn) {
+                fetchDataBtn.addEventListener('click', async () => {
+                    // 显示进度条
+                    gpaProgress.classList.remove('hidden');
+                    fetchDataBtn.disabled = true;
+                    if (refreshDataBtn) refreshDataBtn.disabled = true;
+                    
+                    try {
+                        // 获取存储的用户信息
+                        const userInfo = await window.electronAPI.loadUserInfo();
+                        if (!userInfo || !userInfo.username || !userInfo.password || !userInfo.url) {
+                            throw new Error('用户信息不完整，请重新登录');
+                        }
+                        
+                        // 监听爬虫进度更新（使用GPA界面的进度显示）
+                        const progressListener = (data) => {
+                            gpaProgressText.textContent = data.message || '';
+                        };
+                        window.electronAPI.onCrawlerProgress(progressListener);
+                        
+                        // 启动爬虫
+                        const result = await window.electronAPI.startCrawler({
+                            username: userInfo.username,
+                            password: userInfo.password,
+                            url: userInfo.url
+                        });
+                        
+                        // 移除进度监听器
+                        window.electronAPI.removeCrawlerProgressListener(progressListener);
+                        
+                        // 隐藏进度条
+                        gpaProgress.classList.add('hidden');
+                        fetchDataBtn.disabled = false;
+                        if (refreshDataBtn) refreshDataBtn.disabled = false;
+                        
+                        // 显示结果
+                        alert('数据获取完成！');
+                        console.log('爬虫结果:', result);
+                        
+                        // 加载并显示CSV数据
+                        await loadAndDisplayCourseData();
+                        
+                    } catch (error) {
+                        // 移除进度监听器
+                        // 隐藏进度条
+                        gpaProgress.classList.add('hidden');
+                        fetchDataBtn.disabled = false;
+                        if (refreshDataBtn) refreshDataBtn.disabled = false;
+                        
+                        alert('获取数据失败: ' + error.message);
+                        console.error('爬虫错误:', error);
+                    }
+                });
+            }
+            
+            // 刷新数据按钮事件
+            if (refreshDataBtn) {
+                refreshDataBtn.addEventListener('click', async () => {
+                    await loadAndDisplayCourseData();
+                });
+            }
+            
+            // 加载并显示课程数据的函数
+            async function loadAndDisplayCourseData() {
+                try {
+                    // 这里应该调用加载CSV数据的函数
+                    // 暂时使用模拟数据
+                    const mockData = [
+                        {
+                            course_name: '高等数学',
+                            course_code: 'MATH101',
+                            course_semester: '2023-秋季',
+                            course_weight: 4,
+                            course_score: '85',
+                            course_gpa: '3.0',
+                            pass: 'passed'
+                        },
+                        {
+                            course_name: '大学英语',
+                            course_code: 'ENG101',
+                            course_semester: '2023-秋季',
+                            course_weight: 3,
+                            course_score: '90',
+                            course_gpa: '3.7',
+                            pass: 'passed'
+                        },
+                        {
+                            course_name: '计算机基础',
+                            course_code: 'CS101',
+                            course_semester: '2023-秋季',
+                            course_weight: 3,
+                            course_score: '75',
+                            course_gpa: '2.0',
+                            pass: 'passed'
+                        }
+                    ];
+                    
+                    displayCourseData(mockData);
+                    updateStatistics(mockData);
+                } catch (error) {
+                    console.error('加载数据失败:', error);
+                    alert('加载数据失败: ' + error.message);
+                }
+            }
+            
+            // 显示课程数据的函数
+            function displayCourseData(data) {
+                const tableBody = document.getElementById('courses-table-body');
+                if (!tableBody) return;
+                
+                // 清空现有数据
+                tableBody.innerHTML = '';
+                
+                // 添加新数据
+                data.forEach(course => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${course.course_name}</td>
+                        <td>${course.course_code}</td>
+                        <td>${course.course_semester}</td>
+                        <td>${course.course_weight}</td>
+                        <td>${course.course_score}</td>
+                        <td>${course.course_gpa}</td>
+                        <td class="course-status ${course.pass}">${course.pass === 'passed' ? '通过' : '未通过'}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // 更新统计信息的函数
+            function updateStatistics(data) {
+                if (!data || data.length === 0) return;
+                
+                // 计算平均绩点
+                const totalGPA = data.reduce((sum, course) => {
+                    const gpa = parseFloat(course.course_gpa) || 0;
+                    return sum + gpa;
+                }, 0);
+                const avgGPA = (totalGPA / data.length).toFixed(2);
+                
+                // 计算总学分
+                const totalCredits = data.reduce((sum, course) => {
+                    const weight = parseFloat(course.course_weight) || 0;
+                    return sum + weight;
+                }, 0);
+                
+                // 计算通过课程数
+                const passedCourses = data.filter(course => course.pass === 'passed').length;
+                
+                // 计算需要重修的课程数
+                const needRetake = data.filter(course => course.pass === 'failed').length;
+                
+                // 更新界面显示
+                document.getElementById('avg-gpa').textContent = avgGPA;
+                document.getElementById('total-credits').textContent = totalCredits;
+                document.getElementById('passed-courses').textContent = passedCourses;
+                document.getElementById('need-retake').textContent = needRetake;
+            }
         });
     </script>
 </body>

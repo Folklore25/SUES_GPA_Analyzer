@@ -1,13 +1,13 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
-const Store = require('electron-store');
+const IniHelper = require('./src/utils/iniHelper');
 
 // 保持对窗口对象的全局引用，如果不这么做，当JavaScript对象被垃圾回收时，窗口会自动关闭
 let mainWindow;
 
-// 初始化electron-store
-const store = new Store();
+// 初始化INI文件助手，将用户信息保存在程序运行目录中
+const iniHelper = new IniHelper(path.join(__dirname, 'user-info.ini'));
 
 function createWindow() {
   // 创建浏览器窗口
@@ -92,22 +92,45 @@ ipcMain.handle('load-course-data', async () => {
   }
 });
 
-// 保存用户信息
+// 保存用户信息到INI文件
 ipcMain.handle('save-user-info', async (event, userInfo) => {
   try {
-    store.set('user-info', userInfo);
+    // 如果userInfo为空对象，表示要清除用户信息
+    if (Object.keys(userInfo).length === 0) {
+      // 清除INI文件中的用户信息
+      await iniHelper.delete('user', 'username');
+      await iniHelper.delete('user', 'password');
+      await iniHelper.delete('user', 'url');
+    } else {
+      // 保存用户信息到INI文件
+      await iniHelper.set('user', 'username', userInfo.username || '');
+      await iniHelper.set('user', 'password', userInfo.password || '');
+      await iniHelper.set('user', 'url', userInfo.url || '');
+    }
     return { success: true };
   } catch (error) {
-    throw new Error('保存用户信息失败');
+    throw new Error('保存用户信息失败: ' + error.message);
   }
 });
 
-// 读取用户信息
+// 从INI文件读取用户信息
 ipcMain.handle('load-user-info', async () => {
   try {
-    const userInfo = store.get('user-info');
-    return userInfo || {};
+    const username = await iniHelper.get('user', 'username', '');
+    const password = await iniHelper.get('user', 'password', '');
+    const url = await iniHelper.get('user', 'url', '');
+    
+    // 如果用户名为空，返回空对象
+    if (!username) {
+      return {};
+    }
+    
+    return {
+      username,
+      password,
+      url
+    };
   } catch (error) {
-    throw new Error('读取用户信息失败');
+    throw new Error('读取用户信息失败: ' + error.message);
   }
 });
