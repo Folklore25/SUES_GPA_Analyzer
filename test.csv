@@ -1,0 +1,4 @@
+course_name,course_code,course_semester,course_attribute,course_weight,course_score,course_gpa,pass
+管理学,030101,"1,2",必修,2,B,3,passed
+微观经济学,030207,"2,3",必修,3,72,2.3,passed
+高等数学C（上）,210195,1,必修,4,88,3.7,passed

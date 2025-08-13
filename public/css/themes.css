@@ -76,6 +76,25 @@
     filter: brightness(1.2);
 }
 
+/* 深色主题下的左侧栏适配 */
+:root[data-theme="dark"] .sidebar-nav {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="dark"] .sidebar-item:hover {
+    background: rgba(187, 134, 252, 0.1);
+}
+
+:root[data-theme="dark"] .sidebar-item.active {
+    background: rgba(187, 134, 252, 0.15);
+    border-left: 3px solid var(--color-primary);
+}
+
+:root[data-theme="dark"] .sidebar-link {
+    color: #ffffff;
+}
+
 /* 浅色主题背景 */
 :root:not([data-theme="dark"]) body {
     background: linear-gradient(135deg, #ffffff, #a8c7e7);

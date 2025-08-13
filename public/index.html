@@ -81,353 +81,402 @@
                 </div>
             </div>
             
-            <!-- 统计信息卡片 -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>重修后GPA</h3>
-                    <div class="stat-value" id="avg-gpa">0.00</div>
-                </div>
-                <div class="stat-card">
-                    <h3>当前总学分</h3>
-                    <div class="stat-value" id="total-credits">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>已修</h3>
-                    <div class="stat-value" id="passed-courses">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>未修</h3>
-                    <div class="stat-value" id="need-retake">0</div>
-                </div>
+            <!-- 隐藏的统计信息元素，用于选项卡面板 -->
+            <div style="display: none;">
+                <span id="current-gpa2">0.00</span>
+                <span id="required-gpa2">0.00</span>
             </div>
             
-            <!-- 图表区域 -->
-            <div class="charts-container">
-                <div class="chart-card">
-                    <h3 class="chart-title">学期 GPA 趋势</h3>
-                    <div class="chart-container">
-                        <canvas id="gpa-trend-chart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <h3 class="chart-title">成绩分布</h3>
-                    <div class="chart-container">
-                        <canvas id="grade-distribution-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 选项卡界面 -->
-            <div class="tabs">
-                <div class="tab-buttons">
-                    <button class="tab-button active" data-tab="completed">已修课程</button>
-                    <button class="tab-button" data-tab="uncompleted">未修课程</button>
-                    <button class="tab-button" data-tab="retake">推荐重修课程</button>
-                </div>
-                
-                <div class="tab-contents">
-                    <!-- 已修课程选项卡 -->
-                    <div class="tab-content active" id="completed-tab">
-                        <div class="courses-section">
-                            <h3>已修课程</h3>
-                            <!-- 按学分分组显示已修课程 -->
-                            <div class="credit-groups">
-                                <div class="credit-group" data-credit="4">
-                                    <h4>4学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="completed-4-credit-body">
-                                                <!-- 4学分已修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="3">
-                                    <h4>3学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="completed-3-credit-body">
-                                                <!-- 3学分已修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="2">
-                                    <h4>2学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="completed-2-credit-body">
-                                                <!-- 2学分已修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="1">
-                                    <h4>1学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="completed-1-credit-body">
-                                                <!-- 1学分已修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 未修课程选项卡 -->
-                    <div class="tab-content" id="uncompleted-tab">
-                        <div class="courses-section">
-                            <h3>未修课程</h3>
-                            <!-- 按学分分组显示未修课程 -->
-                            <div class="credit-groups">
-                                <div class="credit-group" data-credit="4">
-                                    <h4>4学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="uncompleted-4-credit-body">
-                                                <!-- 4学分未修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="3">
-                                    <h4>3学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="uncompleted-3-credit-body">
-                                                <!-- 3学分未修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="2">
-                                    <h4>2学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="uncompleted-2-credit-body">
-                                                <!-- 2学分未修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="1">
-                                    <h4>1学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>课程代码</th>
-                                                    <th>学期</th>
-                                                    <th>学分</th>
-                                                    <th>成绩</th>
-                                                    <th>绩点</th>
-                                                    <th>状态</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="uncompleted-1-credit-body">
-                                                <!-- 1学分未修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 推荐重修课程选项卡 -->
-                    <div class="tab-content" id="retake-tab">
-                        <div class="courses-section">
-                            <h3>推荐重修课程</h3>
-                            <!-- 重修后的GPA信息 -->
-                            <div class="retake-stats">
-                                <div class="stat-item">
-                                    <span class="stat-label">理想GPA：</span>
-                                    <span class="stat-value" id="ideal-gpa">0.00</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label">重修后未修课程需要GPA：</span>
-                                    <span class="stat-value" id="required-after-retake-gpa">0.00</span>
-                                </div>
-                            </div>
-                            <!-- 推荐重修课程列表 -->
-                            <div id="retake-courses-container">
-                                <!-- 推荐重修课程将在这里渲染 -->
-                            </div>
-                            <!-- 按学分分组显示推荐重修课程 -->
-                            <div class="credit-groups">
-                                <div class="credit-group" data-credit="4">
-                                    <h4>4学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table retake-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>学分</th>
-                                                    <th>当前绩点</th>
-                                                    <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
-                                                    <th>学年学期</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="retake-4-credit-body">
-                                                <!-- 4学分推荐重修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="3">
-                                    <h4>3学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table retake-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>学分</th>
-                                                    <th>当前绩点</th>
-                                                    <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
-                                                    <th>学年学期</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="retake-3-credit-body">
-                                                <!-- 3学分推荐重修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="2">
-                                    <h4>2学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table retake-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>学分</th>
-                                                    <th>当前绩点</th>
-                                                    <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
-                                                    <th>学年学期</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="retake-2-credit-body">
-                                                <!-- 2学分推荐重修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                
-                                <div class="credit-group" data-credit="1">
-                                    <h4>1学分课程</h4>
-                                    <div class="table-container">
-                                        <table class="courses-table retake-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>课程名称</th>
-                                                    <th>学分</th>
-                                                    <th>当前绩点</th>
-                                                    <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
-                                                    <th>学年学期</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="retake-1-credit-body">
-                                                <!-- 1学分推荐重修课程将在这里渲染 -->
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     
+            <!-- 左侧栏 -->
+            <div class="sidebar-layout">
+                <!-- 侧边栏导航 -->
+                <nav class="sidebar-nav">
+                    <ul class="sidebar-menu">
+                        <li class="sidebar-item active" data-target="charts-panel">
+                            <a href="#" class="sidebar-link">图表</a>
+                        </li>
+                        <li class="sidebar-item" data-target="tabs-panel">
+                            <a href="#" class="sidebar-link">课程详细</a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <!-- 主内容区域 -->
+                <div class="main-content">
+                    <!-- 图表面板 -->
+                    <div class="content-panel active" id="charts-panel">
+                        <!-- 统计信息卡片 -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3>重修后GPA</h3>
+                                <div class="stat-value" id="avg-gpa">0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>当前总学分</h3>
+                                <div class="stat-value" id="total-credits">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>已修</h3>
+                                <div class="stat-value" id="passed-courses">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>未修</h3>
+                                <div class="stat-value" id="need-retake">0</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 图表区域 -->
+                        <div class="charts-container">
+                            <div class="chart-card">
+                                <h3 class="chart-title">学期 GPA 趋势</h3>
+                                <div class="chart-container">
+                                    <canvas id="gpa-trend-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <h3 class="chart-title">成绩分布</h3>
+                                <div class="chart-container">
+                                    <canvas id="grade-distribution-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 选项卡面板 -->
+                    <div class="content-panel" id="tabs-panel">
+                        <!-- 统计信息卡片 -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3>重修后GPA</h3>
+                                <div class="stat-value" id="avg-gpa2">0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>当前总学分</h3>
+                                <div class="stat-value" id="total-credits2">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>已修</h3>
+                                <div class="stat-value" id="passed-courses2">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>未修</h3>
+                                <div class="stat-value" id="need-retake2">0</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 选项卡界面 -->
+                        <div class="tabs">
+                            <div class="tab-buttons">
+                                <button class="tab-button active" data-tab="completed">已修课程</button>
+                                <button class="tab-button" data-tab="uncompleted">未修课程</button>
+                                <button class="tab-button" data-tab="retake">推荐重修课程</button>
+                            </div>
+                            
+                            <div class="tab-contents">
+                                <!-- 已修课程选项卡 -->
+                                <div class="tab-content active" id="completed-tab">
+                                    <div class="courses-section">
+                                        <h3>已修课程</h3>
+                                        <!-- 按学分分组显示已修课程 -->
+                                        <div class="credit-groups">
+                                            <div class="credit-group" data-credit="4">
+                                                <h4>4学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="completed-4-credit-body">
+                                                            <!-- 4学分已修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="3">
+                                                <h4>3学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="completed-3-credit-body">
+                                                            <!-- 3学分已修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="2">
+                                                <h4>2学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="completed-2-credit-body">
+                                                            <!-- 2学分已修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="1">
+                                                <h4>1学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="completed-1-credit-body">
+                                                            <!-- 1学分已修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 未修课程选项卡 -->
+                                <div class="tab-content" id="uncompleted-tab">
+                                    <div class="courses-section">
+                                        <h3>未修课程</h3>
+                                        <!-- 按学分分组显示未修课程 -->
+                                        <div class="credit-groups">
+                                            <div class="credit-group" data-credit="4">
+                                                <h4>4学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="uncompleted-4-credit-body">
+                                                            <!-- 4学分未修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="3">
+                                                <h4>3学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="uncompleted-3-credit-body">
+                                                            <!-- 3学分未修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="2">
+                                                <h4>2学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="uncompleted-2-credit-body">
+                                                            <!-- 2学分未修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="1">
+                                                <h4>1学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>课程代码</th>
+                                                                <th>学期</th>
+                                                                <th>学分</th>
+                                                                <th>成绩</th>
+                                                                <th>绩点</th>
+                                                                <th>状态</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="uncompleted-1-credit-body">
+                                                            <!-- 1学分未修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 推荐重修课程选项卡 -->
+                                <div class="tab-content" id="retake-tab">
+                                    <div class="courses-section">
+                                        <h3>推荐重修课程</h3>
+                                        <!-- 重修后的GPA信息 -->
+                                        <div class="retake-stats">
+                                            <div class="stat-item">
+                                                <span class="stat-label">理想GPA：</span>
+                                                <span class="stat-value" id="ideal-gpa">0.00</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-label">重修后未修课程需要GPA：</span>
+                                                <span class="stat-value" id="required-after-retake-gpa">0.00</span>
+                                            </div>
+                                        </div>
+                                        <!-- 推荐重修课程列表 -->
+                                        <div id="retake-courses-container">
+                                            <!-- 推荐重修课程将在这里渲染 -->
+                                        </div>
+                                        <!-- 按学分分组显示推荐重修课程 -->
+                                        <div class="credit-groups">
+                                            <div class="credit-group" data-credit="4">
+                                                <h4>4学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table retake-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>学分</th>
+                                                                <th>当前绩点</th>
+                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>学年学期</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="retake-4-credit-body">
+                                                            <!-- 4学分推荐重修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="3">
+                                                <h4>3学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table retake-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>学分</th>
+                                                                <th>当前绩点</th>
+                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>学年学期</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="retake-3-credit-body">
+                                                            <!-- 3学分推荐重修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="2">
+                                                <h4>2学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table retake-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>学分</th>
+                                                                <th>当前绩点</th>
+                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>学年学期</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="retake-2-credit-body">
+                                                            <!-- 2学分推荐重修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="credit-group" data-credit="1">
+                                                <h4>1学分课程</h4>
+                                                <div class="table-container">
+                                                    <table class="courses-table retake-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>课程名称</th>
+                                                                <th>学分</th>
+                                                                <th>当前绩点</th>
+                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>学年学期</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="retake-1-credit-body">
+                                                            <!-- 1学分推荐重修课程将在这里渲染 -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
     <!-- 外部JavaScript文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="js/utils.js"></script>

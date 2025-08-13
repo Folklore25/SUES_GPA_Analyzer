@@ -219,6 +219,12 @@ function updateStatistics(data) {
     animateValue('total-credits', 0, totalCredits, 1000);
     animateValue('passed-courses', 0, passedCourses, 1000);
     animateValue('need-retake', 0, needRetake, 1000);
+    
+    // 同时更新选项卡面板中的统计信息
+    animateValue('avg-gpa2', 0, parseFloat(avgGPA), 1000);
+    animateValue('total-credits2', 0, totalCredits, 1000);
+    animateValue('passed-courses2', 0, passedCourses, 1000);
+    animateValue('need-retake2', 0, needRetake, 1000);
 }
 
 // 更新所有显示内容
@@ -236,6 +242,10 @@ function updateAllDisplays(data) {
     const requiredGPA = calculateRequiredGPA(data, targetGPA);
     // 使用动画效果更新未修课程需要的GPA显示
     animateValue('required-gpa', 0, requiredGPA, 1000);
+    
+    // 同时更新选项卡面板中的统计信息
+    animateValue('current-gpa2', 0, currentGPA, 1000);
+    animateValue('required-gpa2', 0, requiredGPA, 1000);
     
     // 显示已修课程
     displayCompletedCourses(data);

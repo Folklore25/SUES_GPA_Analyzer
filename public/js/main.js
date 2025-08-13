@@ -69,6 +69,30 @@ function bindEventListeners() {
             passwordInput.setAttribute('type', type);
             passwordToggle.textContent = type === 'password' ? '👁️' : '🔒';
         });
+        // 左侧栏导航功能
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // 移除所有侧边栏项的active类
+                sidebarItems.forEach(btn => btn.classList.remove('active'));
+                
+                // 为当前项添加active类
+                item.classList.add('active');
+                
+                // 隐藏所有内容面板
+                const contentPanels = document.querySelectorAll('.content-panel');
+                contentPanels.forEach(panel => panel.classList.remove('active'));
+                
+                // 显示对应的内容面板
+                const targetPanel = item.getAttribute('data-target');
+                const panel = document.getElementById(targetPanel);
+                if (panel) {
+                    panel.classList.add('active');
+                }
+            });
+        });
     }
     
     // 选项卡切换功能
@@ -93,4 +117,5 @@ function bindEventListeners() {
             }
         });
     });
+    
 }

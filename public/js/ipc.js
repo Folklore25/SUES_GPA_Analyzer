@@ -33,43 +33,91 @@ async function loadAndDisplayCourseData() {
 // 解析CSV文件数据的函数
 function parseCSV(csvText) {
   console.log('正在解析CSV数据');
-  const lines = csvText.split(/\r?\n/);
-  const result = [];
   
-  // 跳过空行
-  const validLines = lines.filter(line => line.trim() !== '');
-  
-  if (validLines.length === 0) {
-    console.log('CSV数据为空');
-    return result;
+  // 移除可能存在的BOM标记
+  let cleanText = csvText;
+  if (cleanText.charCodeAt(0) === 0xFEFF) {
+    cleanText = cleanText.slice(1);
   }
   
-  // 解析标题行
-  const headers = validLines[0].split(',').map(header => header.trim());
-  console.log('CSV标题行:', headers);
+  // 处理不同的换行符
+  const lines = cleanText.trim().split(/\r?\n/);
   
-  // 解析数据行
-  for (let i = 1; i < validLines.length; i++) {
-    const line = validLines[i].trim();
-    if (line === '') continue;
+  if (lines.length === 0) {
+    return [];
+  }
+  
+  // 处理表头
+  const headersLine = lines[0];
+  const headers = headersLine.split(',');
+  
+  // 清理表头中的BOM标记和空白字符
+  if (headers.length > 0) {
+    headers[0] = headers[0].replace(/^\uFEFF/, '').trim();
+  }
+  
+  const result = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue; // 跳过空行
     
-    // 简单的CSV解析（不处理引号中的逗号）
-    const values = line.split(',').map(value => value.trim());
-    
-    // 确保值的数量与标题数量匹配
+    // 解析CSV行，正确处理引号中的逗号
+    const values = parseCSVLine(lines[i]);
     if (values.length === headers.length) {
-      const course = {};
+      const row = {};
       for (let j = 0; j < headers.length; j++) {
-        course[headers[j]] = values[j];
+        let value = values[j];
+        
+        // 对course_semester字段进行特殊处理，只保留第一个数字
+        if (headers[j] === 'course_semester' && value.includes(',')) {
+          // 移除可能的引号并提取第一个数字
+          const semesterValue = value.replace(/["']/g, '').trim();
+          const firstSemester = semesterValue.split(',')[0].trim();
+          row[headers[j]] = firstSemester;
+        } else {
+          row[headers[j]] = value;
+        }
       }
-      result.push(course);
-    } else {
-      console.warn(`第${i + 1}行数据列数不匹配，跳过该行:`, line);
+      result.push(row);
     }
   }
   
   console.log('CSV数据解析完成，解析结果数量:', result.length);
   return result;
+}
+
+// 解析CSV行的辅助函数，正确处理引号中的逗号
+function parseCSVLine(line) {
+  const values = [];
+  let currentValue = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        // 双引号转义
+        currentValue += '"';
+        i++; // 跳过下一个引号
+      } else {
+        // 切换引号状态
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // 逗号分隔符（不在引号内）
+      values.push(currentValue.trim());
+      currentValue = '';
+    } else {
+      // 普通字符
+      currentValue += char;
+    }
+  }
+  
+  // 添加最后一个值
+  values.push(currentValue.trim());
+  
+  return values;
 }
 
 // 解析INI文件数据的函数（保留以兼容旧格式）

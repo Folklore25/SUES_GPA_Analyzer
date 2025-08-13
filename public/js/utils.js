@@ -66,20 +66,60 @@ function parseCSV(csvText) {
     for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue; // 跳过空行
         
-        const values = lines[i].split(',');
+        // 解析CSV行，正确处理引号中的逗号
+        const values = parseCSVLine(lines[i]);
         if (values.length === headers.length) {
             const row = {};
             for (let j = 0; j < headers.length; j++) {
-                // 移除可能存在的引号和空白字符
-                let value = values[j].trim();
-                if (value.startsWith('"') && value.endsWith('"')) {
-                    value = value.substring(1, value.length - 1);
+                let value = values[j];
+                
+                // 对course_semester字段进行特殊处理，只保留第一个数字
+                if (headers[j] === 'course_semester' && value.includes(',')) {
+                    // 移除可能的引号并提取第一个数字
+                    const semesterValue = value.replace(/["']/g, '').trim();
+                    const firstSemester = semesterValue.split(',')[0].trim();
+                    row[headers[j]] = firstSemester;
+                } else {
+                    row[headers[j]] = value;
                 }
-                row[headers[j]] = value;
             }
             data.push(row);
         }
     }
     
     return data;
+}
+
+// 解析CSV行的辅助函数，正确处理引号中的逗号
+function parseCSVLine(line) {
+    const values = [];
+    let currentValue = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                // 双引号转义
+                currentValue += '"';
+                i++; // 跳过下一个引号
+            } else {
+                // 切换引号状态
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            // 逗号分隔符（不在引号内）
+            values.push(currentValue.trim());
+            currentValue = '';
+        } else {
+            // 普通字符
+            currentValue += char;
+        }
+    }
+    
+    // 添加最后一个值
+    values.push(currentValue.trim());
+    
+    return values;
 }
