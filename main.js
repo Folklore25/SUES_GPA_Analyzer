@@ -79,22 +79,17 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
   });
 });
 
-// 读取课程数据
+// 读取用户信息文件
 ipcMain.handle('load-course-data', async () => {
   const fs = require('fs').promises;
-  const filePath = path.join(__dirname, 'courses.csv');
+  const filePath = path.join(__dirname, 'user-info.ini');
   
   try {
-    // 使用带BOM的UTF-8编码读取文件
+    // 使用UTF-8编码读取INI文件
     const data = await fs.readFile(filePath, 'utf8');
-    // 处理可能的BOM标记
-    let cleanData = data;
-    if (data.charCodeAt(0) === 0xFEFF) {
-      cleanData = data.slice(1);
-    }
-    return cleanData;
+    return data;
   } catch (error) {
-    throw new Error('无法读取课程数据文件: ' + error.message);
+    throw new Error('无法读取用户信息文件: ' + error.message);
   }
 });
 

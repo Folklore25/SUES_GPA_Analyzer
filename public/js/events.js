@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await loadAndDisplayCourseData();
         } catch (error) {
-            console.log('自动加载数据失败（可能文件不存在）:', error.message);
+            console.log('自动加载用户信息失败:', error.message);
         }
     }, 1000);
 });
