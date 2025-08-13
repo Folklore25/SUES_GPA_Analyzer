@@ -417,6 +417,42 @@
                                         <div id="retake-courses-container">
                                             <!-- 推荐重修课程将在这里渲染 -->
                                         </div>
+                                        
+                                        <!-- 重修规划模块 -->
+                                        <div class="retake-plan-section">
+                                            <h4>重修规划</h4>
+                                            <div class="retake-plan-controls">
+                                                <label for="retake-strategy">重修策略：</label>
+                                                <select id="retake-strategy" class="sort-select">
+                                                    <option value="conservative">保守策略</option>
+                                                    <option value="balanced" selected>平衡策略</option>
+                                                    <option value="aggressive">激进策略</option>
+                                                </select>
+                                                
+                                                <button id="generate-retake-plan" class="capsule-btn">生成重修方案</button>
+                                            </div>
+                                            
+                                            <div id="retake-plan-results" class="hidden">
+                                                <div class="retake-plan-charts">
+                                                    <div class="chart-card">
+                                                        <h4 class="chart-title">GPA提升路径</h4>
+                                                        <div class="chart-container">
+                                                            <canvas id="gpa-path-chart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                    <div class="chart-card">
+                                                        <h4 class="chart-title">重修成功率</h4>
+                                                        <div class="chart-container">
+                                                            <canvas id="retake-success-chart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div id="retake-plan-report" class="retake-plan-report">
+                                                    <!-- 重修方案报告将在这里渲染 -->
+                                                </div>
+                                            </div>
+                                        </div>
                                         <!-- 按学分分组显示推荐重修课程 -->
                                         <div class="credit-groups">
                                             <div class="credit-group" data-credit="4">
@@ -513,6 +549,9 @@
     <script src="js/dom.js"></script>
     <script src="js/data.js"></script>
     <script src="js/ipc.js"></script>
+    <script src="js/retake-engine.js"></script>
+    <script src="js/retake-planner.js"></script>
+    <script src="js/retake-visualization.js"></script>
     <script src="js/events.js"></script>
     <script src="js/main.js"></script>
     <script>
