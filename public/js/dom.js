@@ -176,42 +176,45 @@ function displayRetakeCourses(data, targetGPA) {
         container.style.display = 'none';
     }
     
-    // 显示按学分分组的课程
-    const creditGroups = document.querySelectorAll('.credit-group[data-credit]');
-    creditGroups.forEach(group => {
-        const credit = parseInt(group.getAttribute('data-credit'));
-        const tbody = group.querySelector('tbody');
-        const courses = groupedCourses[credit] || [];
-        
-        if (tbody) {
-            tbody.innerHTML = '';
+    // 显示按学分分组的课程，只选择推荐重修课程标签页中的元素
+    const retakeTab = document.getElementById('retake-tab');
+    if (retakeTab) {
+        const creditGroups = retakeTab.querySelectorAll('.credit-group[data-credit]');
+        creditGroups.forEach(group => {
+            const credit = parseInt(group.getAttribute('data-credit'));
+            const tbody = group.querySelector('tbody');
+            const courses = groupedCourses[credit] || [];
             
-            if (courses.length === 0) {
-                const row = tbody.insertRow();
-                const cell = row.insertCell();
-                cell.colSpan = 6; // 现在有6列
-                cell.textContent = '暂无推荐课程';
-                cell.style.textAlign = 'center';
-            } else {
-                courses.forEach(course => {
+            if (tbody) {
+                tbody.innerHTML = '';
+                
+                if (courses.length === 0) {
                     const row = tbody.insertRow();
-                    // 使用新的显示格式：删除任课教师列，修改学年学期显示格式
-                    const cells = [
-                        course.course_name,
-                        course.course_weight,
-                        course.course_gpa,
-                        course.ips ? course.ips.toFixed(4) : 'N/A',
-                        convertSemesterToChinese(course.course_year, course.course_semester)
-                    ];
-                    
-                    cells.forEach(text => {
-                        const cell = row.insertCell();
-                        cell.textContent = text;
+                    const cell = row.insertCell();
+                    cell.colSpan = 6; // 现在有6列
+                    cell.textContent = '暂无推荐课程';
+                    cell.style.textAlign = 'center';
+                } else {
+                    courses.forEach(course => {
+                        const row = tbody.insertRow();
+                        // 使用新的显示格式：删除任课教师列，修改学年学期显示格式
+                        const cells = [
+                            course.course_name,
+                            course.course_weight,
+                            course.course_gpa,
+                            course.ips ? course.ips.toFixed(4) : 'N/A',
+                            convertSemesterToChinese(course.course_year, course.course_semester)
+                        ];
+                        
+                        cells.forEach(text => {
+                            const cell = row.insertCell();
+                            cell.textContent = text;
+                        });
                     });
-                });
+                }
             }
-        }
-    });
+        });
+    }
     
     // 更新理想GPA和重修后需要的GPA显示
     const idealGPA = calculateIdealGPA(data, retakeCourses);
