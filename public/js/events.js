@@ -225,3 +225,45 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('未找到目标GPA输入框');
     }
 });
+
+// 绑定排序控件事件监听器
+document.addEventListener('DOMContentLoaded', () => {
+    // 已修课程排序控件
+    const completedSortSelect = document.getElementById('completed-sort-by');
+    if (completedSortSelect) {
+        completedSortSelect.addEventListener('change', async () => {
+            try {
+                // 重新加载并显示课程数据
+                await loadAndDisplayCourseData();
+            } catch (error) {
+                console.error('排序已修课程时出错:', error);
+            }
+        });
+    }
+    
+    // 未修课程排序控件
+    const uncompletedSortSelect = document.getElementById('uncompleted-sort-by');
+    if (uncompletedSortSelect) {
+        uncompletedSortSelect.addEventListener('change', async () => {
+            try {
+                // 重新加载并显示课程数据
+                await loadAndDisplayCourseData();
+            } catch (error) {
+                console.error('排序未修课程时出错:', error);
+            }
+        });
+    }
+    
+    // 推荐重修课程排序控件
+    const retakeSortSelect = document.getElementById('retake-sort-by');
+    if (retakeSortSelect) {
+        retakeSortSelect.addEventListener('change', async () => {
+            try {
+                // 重新加载并显示课程数据
+                await loadAndDisplayCourseData();
+            } catch (error) {
+                console.error('排序推荐重修课程时出错:', error);
+            }
+        });
+    }
+});

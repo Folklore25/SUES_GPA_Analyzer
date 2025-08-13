@@ -123,3 +123,84 @@ function parseCSVLine(line) {
     
     return values;
 }
+
+/**
+ * 按指定字段和顺序对课程数据进行排序
+ * @param {Array} courses - 课程数据数组
+ * @param {string} sortBy - 排序方式 (name-asc, name-desc, semester-asc, semester-desc)
+ * @returns {Array} 排序后的课程数据
+ */
+function sortCourses(courses, sortBy) {
+    // 创建数据副本以避免修改原始数据
+    const sortedCourses = [...courses];
+    
+    switch (sortBy) {
+        case 'name-asc':
+            // 按课程名称升序排序 (A-Z)
+            return sortedCourses.sort((a, b) => {
+                const nameA = (a.course_name || '').toLowerCase();
+                const nameB = (b.course_name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+        case 'name-desc':
+            // 按课程名称降序排序 (Z-A)
+            return sortedCourses.sort((a, b) => {
+                const nameA = (a.course_name || '').toLowerCase();
+                const nameB = (b.course_name || '').toLowerCase();
+                return nameB.localeCompare(nameA);
+            });
+            
+        case 'semester-asc':
+            // 按学期升序排序
+            return sortedCourses.sort((a, b) => {
+                // 处理学期数据，将其转换为可比较的数字
+                const semesterA = parseSemesterValue(a.course_semester);
+                const semesterB = parseSemesterValue(b.course_semester);
+                return semesterA - semesterB;
+            });
+            
+        case 'semester-desc':
+            // 按学期降序排序
+            return sortedCourses.sort((a, b) => {
+                // 处理学期数据，将其转换为可比较的数字
+                const semesterA = parseSemesterValue(a.course_semester);
+                const semesterB = parseSemesterValue(b.course_semester);
+                return semesterB - semesterA;
+            });
+            
+        default:
+            // 默认按课程名称升序排序
+            return sortedCourses.sort((a, b) => {
+                const nameA = (a.course_name || '').toLowerCase();
+                const nameB = (b.course_name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+    }
+}
+
+/**
+ * 解析学期值为可比较的数字
+ * @param {string} semester - 学期字符串
+ * @returns {number} 可比较的数字
+ */
+function parseSemesterValue(semester) {
+    if (!semester || semester === '--' || semester === 'undefined') {
+        return 0;
+    }
+    
+    // 如果是数字直接返回
+    const num = parseInt(semester, 10);
+    if (!isNaN(num)) {
+        return num;
+    }
+    
+    // 如果包含多个学期，取第一个
+    if (semester.includes(',')) {
+        const firstSemester = semester.split(',')[0].trim();
+        const firstNum = parseInt(firstSemester, 10);
+        return isNaN(firstNum) ? 0 : firstNum;
+    }
+    
+    return 0;
+}

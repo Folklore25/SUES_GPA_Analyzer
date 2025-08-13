@@ -1,7 +1,11 @@
 // 显示已修课程
-function displayCompletedCourses(data) {
+function displayCompletedCourses(data, sortBy = 'name-asc') {
     const passedCourses = data.filter(course => course.pass === 'passed');
-    const groupedCourses = groupCoursesByCredit(passedCourses);
+    
+    // 应用排序
+    const sortedCourses = sortCourses(passedCourses, sortBy);
+    
+    const groupedCourses = groupCoursesByCredit(sortedCourses);
     
     // 显示4学分课程
     const credit4Body = document.getElementById('completed-4-credit-body');
@@ -81,9 +85,13 @@ function displayCompletedCourses(data) {
 }
 
 // 显示未修课程
-function displayUncompletedCourses(data) {
+function displayUncompletedCourses(data, sortBy = 'name-asc') {
     const uncompletedCourses = data.filter(course => course.pass === 'failed' || course.course_score === '--' || course.course_score === '');
-    const groupedCourses = groupCoursesByCredit(uncompletedCourses);
+    
+    // 应用排序
+    const sortedCourses = sortCourses(uncompletedCourses, sortBy);
+    
+    const groupedCourses = groupCoursesByCredit(sortedCourses);
     
     // 显示4学分课程
     const credit4Body = document.getElementById('uncompleted-4-credit-body');
@@ -163,12 +171,15 @@ function displayUncompletedCourses(data) {
 }
 
 // 显示推荐重修课程
-function displayRetakeCourses(data, targetGPA) {
+function displayRetakeCourses(data, targetGPA, sortBy = 'name-asc') {
     // 使用新的IPS算法推荐重修课程
     const retakeCourses = recommendRetakeCourses(data, targetGPA);
     
+    // 应用排序
+    const sortedCourses = sortCourses(retakeCourses, sortBy);
+    
     // 按学分分组课程
-    const groupedCourses = groupCoursesByCredit(retakeCourses);
+    const groupedCourses = groupCoursesByCredit(sortedCourses);
     
     // 隐藏原来的容器
     const container = document.getElementById('retake-courses-container');

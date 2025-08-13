@@ -233,6 +233,11 @@ function updateAllDisplays(data) {
     const targetGPAInput = document.getElementById('target-gpa');
     const targetGPA = targetGPAInput ? parseFloat(targetGPAInput.value) || 0 : 0;
     
+    // 获取排序选项
+    const completedSortBy = document.getElementById('completed-sort-by')?.value || 'name-asc';
+    const uncompletedSortBy = document.getElementById('uncompleted-sort-by')?.value || 'name-asc';
+    const retakeSortBy = document.getElementById('retake-sort-by')?.value || 'name-asc';
+    
     // 计算当前GPA
     const currentGPA = calculateCurrentGPA(data);
     // 使用动画效果更新当前GPA显示
@@ -248,13 +253,13 @@ function updateAllDisplays(data) {
     animateValue('required-gpa2', 0, requiredGPA, 1000);
     
     // 显示已修课程
-    displayCompletedCourses(data);
+    displayCompletedCourses(data, completedSortBy);
     
     // 显示未修课程
-    displayUncompletedCourses(data);
+    displayUncompletedCourses(data, uncompletedSortBy);
     
     // 显示推荐重修课程
-    displayRetakeCourses(data, targetGPA);
+    displayRetakeCourses(data, targetGPA, retakeSortBy);
     
     // 更新图表
     if (typeof createGPATrendChart === 'function' && typeof createGradeDistributionChart === 'function') {

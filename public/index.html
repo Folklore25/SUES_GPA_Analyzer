@@ -178,6 +178,16 @@
                                 <div class="tab-content active" id="completed-tab">
                                     <div class="courses-section">
                                         <h3>已修课程</h3>
+                                        <!-- 排序控件 -->
+                                        <div class="sort-controls">
+                                            <label for="completed-sort-by">排序方式：</label>
+                                            <select id="completed-sort-by" class="sort-select" aria-label="已修课程排序方式">
+                                                <option value="name-asc">课程名称 (A-Z)</option>
+                                                <option value="name-desc">课程名称 (Z-A)</option>
+                                                <option value="semester-asc">学期 (升序)</option>
+                                                <option value="semester-desc">学期 (降序)</option>
+                                            </select>
+                                        </div>
                                         <!-- 按学分分组显示已修课程 -->
                                         <div class="credit-groups">
                                             <div class="credit-group" data-credit="4">
@@ -275,6 +285,16 @@
                                 <div class="tab-content" id="uncompleted-tab">
                                     <div class="courses-section">
                                         <h3>未修课程</h3>
+                                        <!-- 排序控件 -->
+                                        <div class="sort-controls">
+                                            <label for="uncompleted-sort-by">排序方式：</label>
+                                            <select id="uncompleted-sort-by" class="sort-select" aria-label="未修课程排序方式">
+                                                <option value="name-asc">课程名称 (A-Z)</option>
+                                                <option value="name-desc">课程名称 (Z-A)</option>
+                                                <option value="semester-asc">学期 (升序)</option>
+                                                <option value="semester-desc">学期 (降序)</option>
+                                            </select>
+                                        </div>
                                         <!-- 按学分分组显示未修课程 -->
                                         <div class="credit-groups">
                                             <div class="credit-group" data-credit="4">
@@ -372,6 +392,16 @@
                                 <div class="tab-content" id="retake-tab">
                                     <div class="courses-section">
                                         <h3>推荐重修课程</h3>
+                                        <!-- 排序控件 -->
+                                        <div class="sort-controls">
+                                            <label for="retake-sort-by">排序方式：</label>
+                                            <select id="retake-sort-by" class="sort-select" aria-label="推荐重修课程排序方式">
+                                                <option value="name-asc">课程名称 (A-Z)</option>
+                                                <option value="name-desc">课程名称 (Z-A)</option>
+                                                <option value="semester-asc">学期 (升序)</option>
+                                                <option value="semester-desc">学期 (降序)</option>
+                                            </select>
+                                        </div>
                                         <!-- 重修后的GPA信息 -->
                                         <div class="retake-stats">
                                             <div class="stat-item">
