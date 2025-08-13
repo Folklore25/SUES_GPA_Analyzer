@@ -210,9 +210,18 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const targetGPAInput = document.getElementById('target-gpa');
     if (targetGPAInput) {
+        console.log('目标GPA输入框已找到，正在绑定事件监听器');
         targetGPAInput.addEventListener('input', async () => {
-            // 重新加载并显示课程数据
-            await loadAndDisplayCourseData();
+            console.log('目标GPA输入框内容已更改，正在调用loadAndDisplayCourseData函数');
+            try {
+                // 重新加载并显示课程数据
+                await loadAndDisplayCourseData();
+                console.log('loadAndDisplayCourseData函数执行完成');
+            } catch (error) {
+                console.error('loadAndDisplayCourseData函数执行出错:', error);
+            }
         });
+    } else {
+        console.error('未找到目标GPA输入框');
     }
 });

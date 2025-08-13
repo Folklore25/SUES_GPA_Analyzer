@@ -79,17 +79,30 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
   });
 });
 
-// 读取用户信息文件
+// 读取课程数据文件
 ipcMain.handle('load-course-data', async () => {
   const fs = require('fs').promises;
-  const filePath = path.join(__dirname, 'user-info.ini');
+  const filePath = path.join(__dirname, 'courses.csv');
+  
+  console.log('正在尝试读取课程数据文件:', filePath);
   
   try {
-    // 使用UTF-8编码读取INI文件
+    // 检查文件是否存在
+    await fs.access(filePath);
+    console.log('课程数据文件存在');
+    
+    // 使用UTF-8编码读取CSV文件
     const data = await fs.readFile(filePath, 'utf8');
-    return data;
+    console.log('课程数据文件读取成功，数据长度:', data.length);
+    
+    // 移除BOM标记（如果存在）
+    const cleanedData = data.charCodeAt(0) === 0xFEFF ? data.slice(1) : data;
+    console.log('清理BOM后的数据长度:', cleanedData.length);
+    
+    return cleanedData;
   } catch (error) {
-    throw new Error('无法读取用户信息文件: ' + error.message);
+    console.error('读取课程数据文件失败:', error);
+    throw new Error('无法读取课程数据文件: ' + error.message);
   }
 });
 
