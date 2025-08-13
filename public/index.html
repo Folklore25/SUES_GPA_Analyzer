@@ -84,20 +84,36 @@
             <!-- 统计信息卡片 -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>平均绩点</h3>
+                    <h3>重修后GPA</h3>
                     <div class="stat-value" id="avg-gpa">0.00</div>
                 </div>
                 <div class="stat-card">
-                    <h3>总学分</h3>
+                    <h3>当前总学分</h3>
                     <div class="stat-value" id="total-credits">0</div>
                 </div>
                 <div class="stat-card">
-                    <h3>通过课程</h3>
+                    <h3>已修</h3>
                     <div class="stat-value" id="passed-courses">0</div>
                 </div>
                 <div class="stat-card">
-                    <h3>需要重修</h3>
+                    <h3>未修</h3>
                     <div class="stat-value" id="need-retake">0</div>
+                </div>
+            </div>
+            
+            <!-- 图表区域 -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3 class="chart-title">学期 GPA 趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="gpa-trend-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">成绩分布</h3>
+                    <div class="chart-container">
+                        <canvas id="grade-distribution-chart"></canvas>
+                    </div>
                 </div>
             </div>
             
@@ -413,11 +429,49 @@
     </div>
     
     <!-- 外部JavaScript文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/dom.js"></script>
     <script src="js/data.js"></script>
     <script src="js/ipc.js"></script>
     <script src="js/events.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Global variables for charts
+        let gpaTrendChart = null;
+        let gradeDistChart = null;
+        
+        // Animate number changes
+        function animateValue(id, start, end, duration, suffix = '') {
+            const element = document.getElementById(id);
+            if (!element) return;
+            
+            const range = end - start;
+            const minTimer = 50;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            stepTime = Math.max(stepTime, minTimer);
+            
+            const startTime = new Date().getTime();
+            const endTime = startTime + duration;
+            let timer;
+            
+            function run() {
+                const now = new Date().getTime();
+                const remaining = Math.max((endTime - now) / duration, 0);
+                const value = end - (remaining * range);
+                
+                if (value == end) {
+                    clearInterval(timer);
+                }
+                
+                element.textContent = value.toFixed(value % 1 === 0 ? 0 : 2) + suffix;
+            }
+            
+            timer = setInterval(run, stepTime);
+            run();
+        }
+        
+        
+    </script>
 </body>
 </html>

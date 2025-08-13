@@ -61,6 +61,21 @@
     background: linear-gradient(135deg, #1a1a2e, #16213e);
 }
 
+/* 深色主题下的图表适配 */
+:root[data-theme="dark"] .chart-card {
+    background: rgba(30, 30, 30, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="dark"] .chart-title {
+    color: #ffffff;
+}
+
+:root[data-theme="dark"] #gpa-trend-chart,
+:root[data-theme="dark"] #grade-distribution-chart {
+    filter: brightness(1.2);
+}
+
 /* 浅色主题背景 */
 :root:not([data-theme="dark"]) body {
     background: linear-gradient(135deg, #ffffff, #a8c7e7);
