@@ -13,7 +13,7 @@
     }
     console.log("绘制GPAPathChart数据:", gpaPathData);
     canvas.gpaChart = new Chart(ctx, {
-      type: "line",
+      type: "bar",
       data: gpaPathData,
       options: {
         responsive: true,

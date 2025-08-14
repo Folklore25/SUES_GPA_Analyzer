@@ -11,9 +11,9 @@
    * 学分对应难度系数
    */
   function getDifficultyFactor(credits) {
-    if (credits <= 1) return 0.6;
+    if (credits <= 1) return 0.65;
     if (credits === 2) return 0.7;
-    if (credits === 3) return 0.8;
+    if (credits === 3) return 0.75;
     if (credits >= 4) return 1.0;
     return 1.0;
   }
@@ -38,13 +38,13 @@
     // 目标难度系数
     const gap = targetGPA - originalGPA;
     let targetFactor = 1.0;
-    if (gap > 2.0) targetFactor = 0.6;
+    if (gap > 2.0) targetFactor = 0.65;
     else if (gap > 1.5) targetFactor = 0.7;
-    else if (gap > 1.0) targetFactor = 0.8;
+    else if (gap > 1.0) targetFactor = 0.75;
 
     // 课程类型加权
     let typeFactor = 1.0;
-    if (courseType === 'core') typeFactor = 1.1;
+    if (courseType === 'core') typeFactor = 1.05;
     if (courseType === 'elective') typeFactor = 0.95;
 
     const rate = baseRate * (1 / adjustedDifficulty) * historyFactor * targetFactor * typeFactor;
@@ -75,10 +75,10 @@
     const credits = parseFloat(course.course_weight) || 0;
     // 方案C下优化优先级规则：结合绩点差距、学分和价值评分动态调整
     const gap = 4.0 - gpa;
-    if (gap >= 1.5 && credits >= 3) return { label: "紧急", color: "red" };
-    if (gap >= 1.0 && credits >= 2) return { label: "推荐", color: "orange" };
-    if (gap >= 0.7) return { label: "可选", color: "yellow" };
-    if (gap >= 0.5) return { label: "备选", color: "green" };
+    if (gap >= 1.5 && credits >= 2) return { label: "紧急", color: "red" };
+    if (gap >= 1.0) return { label: "推荐", color: "green" };
+    if (gap >= 0.7) return { label: "可选", color: "green" };
+    if (gap >= 0.5) return { label: "备选", color: "blue" };
     return { label: "不建议", color: "gray" };
   }
 
@@ -104,23 +104,23 @@
 
     // 按策略筛选
     if (strategy === "conservative") {
-      candidates = candidates.filter(c => c.successRate >= 0.8).slice(0, 2);
+      candidates = candidates.filter(c => c.successRate >= 0.7).slice(0, 4);
     } else if (strategy === "balanced") {
-      candidates = candidates.slice(0, 4);
+      candidates = candidates.filter(c => c.successRate >= 0.5).slice(0, 7);
     } else if (strategy === "aggressive") {
+      candidates = candidates.filter(c => c.successRate >= 0.3).slice(0, 9);
       // 激进策略不过滤
     }
 
     // 生成报告HTML
     const reportHTML = `
       <table>
-        <tr><th>课程名称</th><th>学分</th><th>当前绩点</th><th>目标GPA</th><th>成功率</th><th>优先级</th></tr>
+        <tr><th>课程名称</th><th>学分</th><th>当前绩点</th><th>成功率</th><th>优先级</th></tr>
         ${candidates.map(c => `
           <tr>
             <td>${c.course_name}</td>
             <td>${c.course_weight}</td>
             <td>${c.course_gpa}</td>
-            <td>${targetGPA}</td>
             <td>${(c.successRate * 100).toFixed(0)}%</td>
             <td style="color:${c.priority.color}">${c.priority.label}</td>
           </tr>
@@ -129,16 +129,6 @@
     `;
 
     // 图表数据
-    const gpaPathData = {
-      labels: candidates.map(c => c.course_name),
-      datasets: [{
-        label: "GPA占比",
-        data: candidates.map(c => ((targetGPA - parseFloat(c.course_gpa)) * parseFloat(c.course_weight) / totalCredits).toFixed(2)),
-        backgroundColor: [
-          "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"
-        ]
-      }]
-    };
 
     const successRateData = {
       labels: candidates.map(c => c.course_name),
@@ -149,12 +139,10 @@
       }]
     };
 
-    console.log("调试: gpaPathData=", gpaPathData);
     console.log("调试: successRateData=", successRateData);
 
     return {
       reportHTML,
-      gpaPathData,
       successRateData,
       courses: candidates.map(c => ({
         id: c.course_code,
