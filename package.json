@@ -4,9 +4,10 @@
   "description": "上海工程技术大学GPA分析工具",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "chcp 65001 && electron main.js",
+    "build": "electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ../outputs  --icon=logo.ico --overwrite ",
     "dev": "electron .",
-    "build": "electron-builder",
+    "build-old": "electron-builder",
     "test": "jest"
   },
   "keywords": [
@@ -48,10 +49,11 @@
     }
   },
   "devDependencies": {
-    "electron-builder": "^24.8.0"
+    "electron": "^37.2.6",
+    "electron-builder": "^24.8.0",
+    "electron-packager": "^17.1.2"
   },
   "dependencies": {
-    "electron": "^37.2.6",
     "electron-store": "^8.2.0",
     "jsdom": "^26.1.0",
     "mathjs": "^11.12.0",
