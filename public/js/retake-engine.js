@@ -1,203 +1,152 @@
 /**
- * GPA重修规划系统 - 核心分析引擎
- * 实现文档中定义的重修分析算法
+ * GPA重修规划核心算法模块
+ * 实现 docs/gpa-retake-planning-doc.md 中的规则
+ * 并与 RetakePlanner / events.js 对接
  */
 
-// 基于学分的难度系数
-const difficultyCoefficients = {
-  1: 0.7,   // 通识/选修课
-  2: 0.85,  // 专业基础课
-  3: 1.0,   // 专业核心课
-  4: 1.2    // 专业进阶课
-};
+(function () {
+  const { calculateCurrentGPA, groupCoursesByCredit } = window; // 复用 data.js 方法
 
-/**
- * 计算重修成功概率
- * @param {number} originalGPA - 原始绩点
- * @param {number} targetGPA - 目标绩点
- * @param {number} credits - 课程学分
- * @returns {number} 成功概率(0-1)
- */
-function calculateSuccessRate(originalGPA, targetGPA, credits) {
-  const baseSuccessRate = 0.8;
-  const difficultyFactor = 1 / (difficultyCoefficients[credits] || 1.0);
-  const historyFactor = (4.0 - originalGPA) / 4.0;
-  const gap = targetGPA - originalGPA;
-  
-  let reasonablenessFactor = 1.0;
-  if (gap > 2.0) reasonablenessFactor = 0.4;
-  else if (gap > 1.5) reasonablenessFactor = 0.6;
-  else if (gap > 1.0) reasonablenessFactor = 0.8;
-  
-  return baseSuccessRate * difficultyFactor * historyFactor * reasonablenessFactor;
-}
+  /**
+   * 学分对应难度系数
+   */
+  function getDifficultyFactor(credits) {
+    if (credits <= 1) return 0.7;
+    if (credits === 2) return 0.85;
+    if (credits === 3) return 1.0;
+    if (credits >= 4) return 1.2;
+    return 1.0;
+  }
 
-/**
- * 计算重修价值评分
- * @param {Object} course - 课程对象
- * @param {Array} allCourses - 所有课程数组
- * @returns {number} 重修价值分数
- */
-function calculateRetakeValue(course, allCourses) {
-  const totalCredits = allCourses.reduce((sum, c) => sum + parseFloat(c.course_weight || 0), 0);
-  const credits = parseFloat(course.course_weight || 0);
-  const currentGPA = parseFloat(course.course_gpa || 0);
-  
-  // 提升潜力分
-  const improvementPotential = (4.0 - currentGPA) * credits / (difficultyCoefficients[credits] || 1.0);
-  
-  // 影响权重分
-  const impactWeight = credits > 0 ? (credits / totalCredits) * 100 : 0;
-  
-  // 努力回报比
-  const effortReturnRatio = credits > 0 ? 
-    (4.0 - currentGPA) / ((difficultyCoefficients[credits] || 1.0) * credits) : 0;
-  
-  return (improvementPotential * 0.4) + (impactWeight * 0.3) + (effortReturnRatio * 0.3);
-}
+  /**
+   * 成功率计算
+   */
+  function calculateSuccessRate(originalGPA, targetGPA, credits) {
+    const baseRate = 0.8;
+    const difficultyFactor = getDifficultyFactor(credits);
+    const historyFactor = (4.0 - originalGPA) / 4.0;
+    const gap = targetGPA - originalGPA;
+    let targetFactor = 1.0;
+    if (gap > 2.0) targetFactor = 0.4;
+    else if (gap > 1.5) targetFactor = 0.6;
+    else if (gap > 1.0) targetFactor = 0.8;
+    return Math.max(0, Math.min(1, baseRate * (1 / difficultyFactor) * historyFactor * targetFactor));
+  }
 
-/**
- * 获取课程优先级等级
- * @param {Object} course - 课程对象
- * @returns {Object} 优先级信息 {level, label, color}
- */
-function getPriorityLevel(course) {
-  const gpa = parseFloat(course.course_gpa || 0);
-  const credits = parseFloat(course.course_weight || 0);
-  
-  if (gpa < 2.0 && credits >= 4) return { level: 1, label: '【紧急】', color: 'red' };
-  if (gpa >= 2.0 && gpa < 2.5 && credits >= 3) return { level: 2, label: '【推荐】', color: 'orange' };
-  if (gpa >= 2.5 && gpa < 3.0 && credits >= 3) return { level: 3, label: '【可选】', color: 'yellow' };
-  if (gpa >= 3.0 && gpa < 3.3) return { level: 4, label: '【备选】', color: 'green' };
-  return { level: 0, label: '不推荐', color: 'gray' };
-}
+  /**
+   * 价值评分计算
+   */
+  function calculateValueScore(course, totalCredits) {
+    const credits = parseFloat(course.course_weight) || 0;
+    const currentGPA = parseFloat(course.course_gpa) || 0;
+    const targetGPA = 4.0; // 默认满分目标
+    const difficultyFactor = getDifficultyFactor(credits);
 
-/**
- * 分析推荐重修课程
- * @param {Array} courses - 所有课程数组
- * @param {number} targetGPA - 目标GPA
- * @returns {Array} 推荐重修课程数组
- */
-function analyzeRetakeCourses(courses, targetGPA) {
-  const passedCourses = courses.filter(course => 
-    course.pass === 'passed' && parseFloat(course.course_gpa || 0) < targetGPA
-  );
-  
-  return passedCourses.map(course => {
-    const credits = parseFloat(course.course_weight || 0);
-    const currentGPA = parseFloat(course.course_gpa || 0);
-    
-    return {
-      ...course,
-      priority: getPriorityLevel(course),
-      successRate: calculateSuccessRate(currentGPA, targetGPA, credits),
-      retakeValue: calculateRetakeValue(course, courses),
-      recommendedTarget: getRecommendedTarget(currentGPA)
+    const potential = (4.0 - currentGPA) * credits / difficultyFactor;
+    const impact = (credits / totalCredits) * 100;
+    const effortReturn = ((targetGPA - currentGPA) / (difficultyFactor * credits));
+
+    return (potential * 0.4) + (impact * 0.3) + (effortReturn * 0.3);
+  }
+
+  /**
+   * 优先级标签
+   */
+  function getPriorityLabel(course) {
+    const gpa = parseFloat(course.course_gpa) || 0;
+    const credits = parseFloat(course.course_weight) || 0;
+    if (gpa < 2.0 && credits >= 4) return { label: "紧急", color: "red" };
+    if (gpa < 2.5 && credits >= 3) return { label: "推荐", color: "orange" };
+    if (gpa < 3.0 && credits >= 3) return { label: "可选", color: "yellow" };
+    if (gpa < 3.3) return { label: "备选", color: "green" };
+    return { label: "不建议", color: "gray" };
+  }
+
+  /**
+   * 主入口
+   */
+  async function generatePlan(strategy, targetGPA) {
+    const data = window.courseData || []; // 假设全局有课程数据
+    const totalCredits = data.reduce((sum, c) => sum + (parseFloat(c.course_weight) || 0), 0);
+    const originalGPA = calculateCurrentGPA(data);
+
+    // 过滤不建议重修的课程
+    let candidates = data.filter(c => parseFloat(c.course_gpa) < 3.5 && parseFloat(c.course_weight) > 1);
+
+    // 计算附加信息
+    candidates = candidates.map(c => {
+      const credits = parseFloat(c.course_weight) || 0;
+      const successRate = calculateSuccessRate(parseFloat(c.course_gpa), targetGPA, credits);
+      const valueScore = calculateValueScore(c, totalCredits);
+      const priority = getPriorityLabel(c);
+      return { ...c, successRate, valueScore, priority };
+    });
+
+    // 按策略筛选
+    if (strategy === "conservative") {
+      candidates = candidates.filter(c => c.successRate >= 0.8).slice(0, 2);
+    } else if (strategy === "balanced") {
+      candidates = candidates.slice(0, 4);
+    } else if (strategy === "aggressive") {
+      // 激进策略不过滤
+    }
+
+    // 生成报告HTML
+    const reportHTML = `
+      <table>
+        <tr><th>课程名称</th><th>学分</th><th>当前绩点</th><th>目标绩点</th><th>成功率</th><th>优先级</th></tr>
+        ${candidates.map(c => `
+          <tr>
+            <td>${c.course_name}</td>
+            <td>${c.course_weight}</td>
+            <td>${c.course_gpa}</td>
+            <td>${targetGPA}</td>
+            <td>${(c.successRate * 100).toFixed(0)}%</td>
+            <td style="color:${c.priority.color}">${c.priority.label}</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
+
+    // 图表数据
+    const gpaPathData = {
+      labels: ["当前", ...candidates.map(c => c.course_name)],
+      datasets: [{
+        label: "GPA提升路径",
+        data: [originalGPA, ...candidates.map((c, i) => originalGPA + ((targetGPA - parseFloat(c.course_gpa)) * parseFloat(c.course_weight) / totalCredits))],
+        borderColor: "#007acc",
+        fill: false
+      }]
     };
-  }).sort((a, b) => b.retakeValue - a.retakeValue);
-}
 
-/**
- * 获取推荐目标绩点
- * @param {number} originalGPA - 原始绩点
- * @returns {number} 推荐目标绩点
- */
-function getRecommendedTarget(originalGPA) {
-  if (originalGPA < 2.0) return 3.0;
-  if (originalGPA < 2.5) return 3.3;
-  if (originalGPA < 3.0) return 3.7;
-  return 3.7;
-}
+    const successRateData = {
+      labels: candidates.map(c => c.course_name),
+      datasets: [{
+        label: "成功率(%)",
+        data: candidates.map(c => Number((c.successRate * 100).toFixed(2))),
+        backgroundColor: "#03dac6"
+      }]
+    };
 
-/**
- * 计算重修后的GPA
- * @param {Array} currentCourses - 当前所有课程
- * @param {Array} selectedRetakes - 选择重修的课程代码数组
- * @param {Object} targetSettings - 各课程目标绩点设置
- * @returns {number} 预计GPA
- */
-function calculateRealtimeGPA(currentCourses, selectedRetakes, targetSettings) {
-  let totalPoints = 0;
-  let totalCredits = 0;
-  
-  // 计算原有课程
-  currentCourses.forEach(course => {
-    const credits = parseFloat(course.course_weight || 0);
-    const gpa = parseFloat(course.course_gpa || 0);
-    totalPoints += credits * gpa;
-    totalCredits += credits;
-  });
-  
-  // 计算重修课程的影响
-  selectedRetakes.forEach(courseCode => {
-    const course = currentCourses.find(c => c.course_code === courseCode);
-    if (course && targetSettings[courseCode]) {
-      const targetGPA = targetSettings[courseCode];
-      const credits = parseFloat(course.course_weight || 0);
-      const originalGPA = parseFloat(course.course_gpa || 0);
-      
-      // 更新绩点贡献
-      totalPoints += credits * (targetGPA - originalGPA);
-    }
-  });
-  
-  return totalCredits > 0 ? totalPoints / totalCredits : 0;
-}
+    console.log("调试: gpaPathData=", gpaPathData);
+    console.log("调试: successRateData=", successRateData);
 
-// 导出函数并附加到window对象
-if (typeof window !== 'undefined') {
-  window.retakeEngine = {
-    calculateSuccessRate,
-    calculateRetakeValue,
-    getPriorityLevel,
-    analyzeRetakeCourses,
-    getRecommendedTarget,
-    calculateRealtimeGPA,
-    generatePlan: function(strategy, targetGPA) {
-      // 这里实现生成重修方案的逻辑
-      // 返回包含报告HTML、图表数据等的对象
-      // 获取课程数据（实际应用中应该从外部传入）
-      const courses = window.courseData || [];
-      
-      // 计算总学分
-      const totalCredits = courses.reduce((sum, course) => {
-        return sum + (parseFloat(course.course_weight) || 0);
-      }, 0);
-      
-      // 计算当前GPA
-      let currentGPA = 0;
-      if (totalCredits > 0) {
-        const totalPoints = courses.reduce((sum, course) => {
-          const credits = parseFloat(course.course_weight) || 0;
-          const gpa = parseFloat(course.course_gpa) || 0;
-          return sum + credits * gpa;
-        }, 0);
-        currentGPA = totalPoints / totalCredits;
-      }
-      
-      return {
-        reportHTML: '<div>重修方案报告</div>',
-        gpaPathData: {
-          labels: ['当前', '重修后'],
-          datasets: [
-            {label: '最佳情况', data: [currentGPA, 3.5]},
-            {label: '期望情况', data: [currentGPA, 3.2]},
-            {label: '保守情况', data: [currentGPA, 3.0]},
-            {label: '目标GPA', data: [currentGPA, targetGPA], borderDash: [5, 5]}
-          ]
-        },
-        successRateData: {
-          labels: ['成功率'],
-          datasets: [
-            {label: '最佳情况', data: [85]},
-            {label: '期望情况', data: [75]},
-            {label: '保守情况', data: [65]}
-          ]
-        },
-        courses: courses,
-        totalCredits: totalCredits,
-        originalGPA: currentGPA
-      };
-    }
-  };
-}
+    return {
+      reportHTML,
+      gpaPathData,
+      successRateData,
+      courses: candidates.map(c => ({
+        id: c.course_code,
+        name: c.course_name,
+        credits: parseFloat(c.course_weight),
+        originalGrade: parseFloat(c.course_gpa),
+        targetGrade: targetGPA,
+        successRate: c.successRate
+      })),
+      totalCredits,
+      originalGPA
+    };
+  }
+
+  window.retakeEngine = { generatePlan };
+})();

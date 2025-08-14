@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,15 +11,16 @@
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/responsive.css">
 </head>
+
 <body>
     <!-- 主题切换按钮 -->
     <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
         <span class="theme-toggle-icon">☀️</span>
     </button>
-    
+
     <div class="container">
         <h1>上海工程技术大学GPA分析工具</h1>
-        
+
         <div id="login-section" class="login-form" role="form" aria-labelledby="login-heading">
             <h2 id="login-heading" style="color: #000000; text-align: center; margin-bottom: 30px;">学生登录</h2>
             <div class="form-group">
@@ -28,7 +30,8 @@
             <div class="form-group password-container">
                 <label for="password">密码：</label>
                 <div class="password-input-wrapper">
-                    <input type="password" id="password" class="capsule-input password-input" placeholder="请输入密码" aria-required="true">
+                    <input type="password" id="password" class="capsule-input password-input" placeholder="请输入密码"
+                        aria-required="true">
                     <span class="password-toggle" id="password-toggle" aria-label="显示/隐藏密码">👁️</span>
                 </div>
             </div>
@@ -41,13 +44,13 @@
                 <label for="remember-me" id="remember-me-description">保留我的用户信息</label>
             </div>
             <button id="login-btn" class="capsule-btn" aria-busy="false">登录系统</button>
-            
+
             <div id="progress" class="progress hidden">
                 <p>正在获取培养方案数据...</p>
                 <div id="progress-text"></div>
             </div>
         </div>
-        
+
         <div id="gpa-section" class="hidden">
             <!-- GPA分析主界面 -->
             <div class="gpa-header">
@@ -57,17 +60,17 @@
                     <button id="refresh-data-btn" class="capsule-btn" style="margin-left: 10px;">刷新数据</button>
                 </div>
             </div>
-            
+
             <div id="gpa-progress" class="progress hidden">
                 <p>正在获取培养方案数据...</p>
                 <div id="gpa-progress-text"></div>
             </div>
-            
+
             <!-- GPA目标输入和统计信息 -->
             <div class="gpa-controls">
                 <div class="target-gpa-input">
                     <label for="target-gpa">目标GPA：</label>
-                    <input type="number" id="target-gpa" step="0.01" min="0" max="4" placeholder="请输入目标GPA">
+                    <input type="number" id="target-gpa" step="0.1" min="0" max="4" inputmode="decimal" placeholder="请输入目标GPA">
                 </div>
                 <div class="gpa-stats">
                     <div class="stat-item">
@@ -80,14 +83,14 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 隐藏的统计信息元素，用于选项卡面板 -->
             <div style="display: none;">
                 <span id="current-gpa2">0.00</span>
                 <span id="required-gpa2">0.00</span>
             </div>
-            
-    
+
+
             <!-- 左侧栏 -->
             <div class="sidebar-layout">
                 <!-- 侧边栏导航 -->
@@ -101,7 +104,7 @@
                         </li>
                     </ul>
                 </nav>
-                
+
                 <!-- 主内容区域 -->
                 <div class="main-content">
                     <!-- 图表面板 -->
@@ -125,7 +128,7 @@
                                 <div class="stat-value" id="need-retake">0</div>
                             </div>
                         </div>
-                        
+
                         <!-- 图表区域 -->
                         <div class="charts-container">
                             <div class="chart-card">
@@ -142,7 +145,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- 选项卡面板 -->
                     <div class="content-panel" id="tabs-panel">
                         <!-- 统计信息卡片 -->
@@ -164,7 +167,7 @@
                                 <div class="stat-value" id="need-retake2">0</div>
                             </div>
                         </div>
-                        
+
                         <!-- 选项卡界面 -->
                         <div class="tabs">
                             <div class="tab-buttons">
@@ -172,7 +175,7 @@
                                 <button class="tab-button" data-tab="uncompleted">未修课程</button>
                                 <button class="tab-button" data-tab="retake">推荐重修课程</button>
                             </div>
-                            
+
                             <div class="tab-contents">
                                 <!-- 已修课程选项卡 -->
                                 <div class="tab-content active" id="completed-tab">
@@ -211,7 +214,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="3">
                                                 <h4>3学分课程</h4>
                                                 <div class="table-container">
@@ -233,7 +236,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="2">
                                                 <h4>2学分课程</h4>
                                                 <div class="table-container">
@@ -255,7 +258,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="1">
                                                 <h4>1学分课程</h4>
                                                 <div class="table-container">
@@ -280,7 +283,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- 未修课程选项卡 -->
                                 <div class="tab-content" id="uncompleted-tab">
                                     <div class="courses-section">
@@ -318,7 +321,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="3">
                                                 <h4>3学分课程</h4>
                                                 <div class="table-container">
@@ -340,7 +343,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="2">
                                                 <h4>2学分课程</h4>
                                                 <div class="table-container">
@@ -362,7 +365,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="1">
                                                 <h4>1学分课程</h4>
                                                 <div class="table-container">
@@ -387,7 +390,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- 推荐重修课程选项卡 -->
                                 <div class="tab-content" id="retake-tab">
                                     <div class="courses-section">
@@ -417,7 +420,7 @@
                                         <div id="retake-courses-container">
                                             <!-- 推荐重修课程将在这里渲染 -->
                                         </div>
-                                        
+
                                         <!-- 重修规划模块 -->
                                         <div class="retake-plan-section">
                                             <h4>重修规划</h4>
@@ -428,10 +431,10 @@
                                                     <option value="balanced" selected>平衡策略</option>
                                                     <option value="aggressive">激进策略</option>
                                                 </select>
-                                                
+
                                                 <button id="generate-retake-plan" class="capsule-btn">生成重修方案</button>
                                             </div>
-                                            
+
                                             <div id="retake-plan-results" class="hidden">
                                                 <div class="retake-plan-charts">
                                                     <div class="chart-card">
@@ -447,7 +450,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div id="retake-plan-report" class="retake-plan-report">
                                                     <!-- 重修方案报告将在这里渲染 -->
                                                 </div>
@@ -464,7 +467,9 @@
                                                                 <th>课程名称</th>
                                                                 <th>学分</th>
                                                                 <th>当前绩点</th>
-                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>IPS值 <span class="info-icon"
+                                                                        title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span>
+                                                                </th>
                                                                 <th>学年学期</th>
                                                             </tr>
                                                         </thead>
@@ -474,7 +479,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="3">
                                                 <h4>3学分课程</h4>
                                                 <div class="table-container">
@@ -484,7 +489,9 @@
                                                                 <th>课程名称</th>
                                                                 <th>学分</th>
                                                                 <th>当前绩点</th>
-                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>IPS值 <span class="info-icon"
+                                                                        title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span>
+                                                                </th>
                                                                 <th>学年学期</th>
                                                             </tr>
                                                         </thead>
@@ -494,7 +501,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="2">
                                                 <h4>2学分课程</h4>
                                                 <div class="table-container">
@@ -504,7 +511,9 @@
                                                                 <th>课程名称</th>
                                                                 <th>学分</th>
                                                                 <th>当前绩点</th>
-                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>IPS值 <span class="info-icon"
+                                                                        title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span>
+                                                                </th>
                                                                 <th>学年学期</th>
                                                             </tr>
                                                         </thead>
@@ -514,7 +523,7 @@
                                                     </table>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="credit-group" data-credit="1">
                                                 <h4>1学分课程</h4>
                                                 <div class="table-container">
@@ -524,7 +533,9 @@
                                                                 <th>课程名称</th>
                                                                 <th>学分</th>
                                                                 <th>当前绩点</th>
-                                                                <th>IPS值 <span class="info-icon" title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span></th>
+                                                                <th>IPS值 <span class="info-icon"
+                                                                        title="IPS (重修性价比指数) = 学分权重 × 绩点提升空间 × 对总GPA的影响系数">ⓘ</span>
+                                                                </th>
                                                                 <th>学年学期</th>
                                                             </tr>
                                                         </thead>
@@ -542,54 +553,56 @@
                     </div>
                 </div>
             </div>
-            
-    <!-- 外部JavaScript文件 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/dom.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/ipc.js"></script>
-    <script src="js/retake-engine.js"></script>
-    <script src="js/retake-planner.js"></script>
-    <script src="js/retake-visualization.js"></script>
-    <script src="js/events.js"></script>
-    <script src="js/main.js"></script>
-    <script>
-        // Global variables for charts
-        let gpaTrendChart = null;
-        let gradeDistChart = null;
-        
-        // Animate number changes
-        function animateValue(id, start, end, duration, suffix = '') {
-            const element = document.getElementById(id);
-            if (!element) return;
-            
-            const range = end - start;
-            const minTimer = 50;
-            let stepTime = Math.abs(Math.floor(duration / range));
-            stepTime = Math.max(stepTime, minTimer);
-            
-            const startTime = new Date().getTime();
-            const endTime = startTime + duration;
-            let timer;
-            
-            function run() {
-                const now = new Date().getTime();
-                const remaining = Math.max((endTime - now) / duration, 0);
-                const value = end - (remaining * range);
-                
-                if (value == end) {
-                    clearInterval(timer);
+
+            <!-- 外部JavaScript文件 -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+            <script src="js/utils.js"></script>
+            <script src="js/dom.js"></script>
+            <script src="js/data.js"></script>
+            <script src="js/ipc.js"></script>
+            <script src="js/retake-engine.js"></script>
+            <script src="js/retake-visualization.js"></script>
+            <script src="js/retake-planner.js"></script>
+            <script src="js/retake-visualization.js"></script>
+            <script src="js/events.js"></script>
+            <script src="js/main.js"></script>
+            <script>
+                // Global variables for charts
+                let gpaTrendChart = null;
+                let gradeDistChart = null;
+
+                // Animate number changes
+                function animateValue(id, start, end, duration, suffix = '') {
+                    const element = document.getElementById(id);
+                    if (!element) return;
+
+                    const range = end - start;
+                    const minTimer = 50;
+                    let stepTime = Math.abs(Math.floor(duration / range));
+                    stepTime = Math.max(stepTime, minTimer);
+
+                    const startTime = new Date().getTime();
+                    const endTime = startTime + duration;
+                    let timer;
+
+                    function run() {
+                        const now = new Date().getTime();
+                        const remaining = Math.max((endTime - now) / duration, 0);
+                        const value = end - (remaining * range);
+
+                        if (value == end) {
+                            clearInterval(timer);
+                        }
+
+                        element.textContent = value.toFixed(value % 1 === 0 ? 0 : 2) + suffix;
+                    }
+
+                    timer = setInterval(run, stepTime);
+                    run();
                 }
-                
-                element.textContent = value.toFixed(value % 1 === 0 ? 0 : 2) + suffix;
-            }
-            
-            timer = setInterval(run, stepTime);
-            run();
-        }
-        
-        
-    </script>
+
+
+            </script>
 </body>
+
 </html>
