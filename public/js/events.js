@@ -295,14 +295,10 @@ if (generateRetakeBtn) {
                 );
             }
 
-            // 添加目标绩点设置功能（设计文档要求）
-            setupTargetGradeSelection(retakePlan.courses);
 
             // 添加实时GPA计算（设计文档要求）
             setupRealTimeGPACalculation();
 
-            // 添加场景模拟分析（设计文档要求）
-            setupScenarioSimulation();
 
         } catch (error) {
             console.error('生成重修方案失败:', error);
@@ -312,55 +308,6 @@ if (generateRetakeBtn) {
             generateRetakeBtn.textContent = '生成重修方案';
         }
     });
-}
-
-// 目标绩点设置功能（设计文档第134行）
-function setupTargetGradeSelection(courses) {
-    const table = document.querySelector('#retake-plan-report table');
-    if (!table) return;
-
-    // 添加目标绩点表头
-    const headerRow = table.rows[0];
-    const targetHeader = document.createElement('th');
-    targetHeader.textContent = '目标绩点';
-    headerRow.appendChild(targetHeader);
-
-    // 为每门课程添加目标绩点选择器
-    // 确保只处理课程行（表格行数应与课程数匹配）
-    const courseRows = Math.min(courses.length, table.rows.length - 1);
-    for (let i = 1; i <= courseRows; i++) {
-        const row = table.rows[i];
-        const cell = document.createElement('td');
-
-        const select = document.createElement('select');
-        select.className = 'target-grade-select';
-        select.dataset.courseId = courses[i - 1].id;
-
-        // 添加绩点选项（设计文档第138行）
-        const options = [
-            { value: 4.0, text: 'A (4.0) 优秀' },
-            { value: 3.7, text: 'A- (3.7) 良好' },
-            { value: 3.3, text: 'B+ (3.3) 中上' },
-            { value: 3.0, text: 'B (3.0) 及格优' }
-        ];
-
-        options.forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.text;
-            select.appendChild(optionElement);
-        });
-
-        // 设置智能默认值（设计文档第145行）
-        const originalGrade = parseFloat(row.cells[2].textContent);
-        if (originalGrade < 2.0) select.value = 3.0;
-        else if (originalGrade < 2.5) select.value = 3.3;
-        else if (originalGrade < 3.0) select.value = 3.7;
-        else select.value = 3.7;
-
-        cell.appendChild(select);
-        row.appendChild(cell);
-    }
 }
 
 // 实时GPA计算引擎（设计文档第152行）
@@ -398,88 +345,6 @@ function setupRealTimeGPACalculation() {
     });
 }
 
-// 场景模拟分析（设计文档第210行）
-function setupScenarioSimulation() {
-    // 创建场景模拟容器
-    const container = document.createElement('div');
-    container.id = 'scenario-simulation';
-    container.innerHTML = `
-            <h3>场景模拟分析</h3>
-            <div class="scenarios">
-                <div class="scenario best-case">
-                    <h4>最佳情况</h4>
-                    <p class="gpa-value">-</p>
-                    <p class="probability">-</p>
-                </div>
-                <div class="scenario expected-case">
-                    <h4>期望情况</h4>
-                    <p class="gpa-value">-</p>
-                    <p class="probability">-</p>
-                </div>
-                <div class="scenario conservative-case">
-                    <h4>保守情况</h4>
-                    <p class="gpa-value">-</p>
-                    <p class="probability">-</p>
-                </div>
-                <div class="scenario worst-case">
-                    <h4>最差情况</h4>
-                    <p class="gpa-value">-</p>
-                    <p class="probability">-</p>
-                </div>
-            </div>
-        `;
-
-    document.getElementById('retake-plan-results').appendChild(container);
-
-    // 初始计算
-    calculateScenarios();
-}
-
-// 计算四种场景（设计文档第210行）
-function calculateScenarios() {
-    console.log('检查 window.retakePlanData:', window.retakePlanData);
-    const courses = window.retakePlanData.courses;
-    const originalGPA = window.retakePlanData.originalGPA;
-    const totalCredits = window.retakePlanData.totalCredits;
-
-    // 1. 最佳情况（所有目标达成）
-    let bestCaseGPA = originalGPA;
-    courses.forEach(course => {
-        const contribution = (course.targetGrade - course.originalGrade) * course.credits / totalCredits;
-        bestCaseGPA += contribution;
-    });
-
-    // 2. 期望情况（概率加权）
-    let expectedCaseGPA = originalGPA;
-    courses.forEach(course => {
-        const expectedGrade = course.targetGrade * course.successRate +
-            course.originalGrade * (1 - course.successRate);
-        const contribution = (expectedGrade - course.originalGrade) * course.credits / totalCredits;
-        expectedCaseGPA += contribution;
-    });
-
-    // 3. 保守情况（部分达成）
-    let conservativeCaseGPA = originalGPA;
-    courses.forEach(course => {
-        let actualGrade;
-        if (course.targetGrade === 4.0) actualGrade = 3.3;
-        else if (course.targetGrade === 3.7) actualGrade = 3.0;
-        else if (course.targetGrade === 3.3) actualGrade = 3.0;
-        else actualGrade = course.originalGrade;
-
-        const contribution = (actualGrade - course.originalGrade) * course.credits / totalCredits;
-        conservativeCaseGPA += contribution;
-    });
-
-    // 4. 最差情况（维持现状）
-    const worstCaseGPA = originalGPA;
-
-    // 更新UI
-    document.querySelector('.best-case .gpa-value').textContent = bestCaseGPA.toFixed(3);
-    document.querySelector('.expected-case .gpa-value').textContent = expectedCaseGPA.toFixed(3);
-    document.querySelector('.conservative-case .gpa-value').textContent = conservativeCaseGPA.toFixed(3);
-    document.querySelector('.worst-case .gpa-value').textContent = worstCaseGPA.toFixed(3);
-}
 
 // 更新GPA显示（设计文档第174行）
 function updateGPADisplay() {

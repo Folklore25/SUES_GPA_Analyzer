@@ -5,13 +5,6 @@
 
 const retakeEngine = require('./retake-engine');
 
-// 目标绩点选项
-const targetOptions = [
-  { grade: 'A', gpa: 4.0, description: '优秀 - 完全掌握，追求满分' },
-  { grade: 'A-', gpa: 3.7, description: '良好 - 扎实掌握，留有余地' },
-  { grade: 'B+', gpa: 3.3, description: '中上 - 明显改善，相对稳妥' },
-  { grade: 'B', gpa: 3.0, description: '及格优 - 基础改善，容易达成' }
-];
 
 class RetakePlanner {
   constructor(courseData) {
