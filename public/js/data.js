@@ -227,30 +227,29 @@ function updateStatistics(data) {
     animateValue('need-retake2', 0, needRetake, 1000);
 }
 
+// 更新推荐重修课程显示
+function updateRetakeCoursesDisplay(data, targetGPA) {
+    // 获取排序选项
+    const retakeSortBy = document.getElementById('retake-sort-by')?.value || 'name-asc';
+    
+    // 显示推荐重修课程
+    displayRetakeCourses(data, targetGPA, retakeSortBy);
+}
+
 // 更新所有显示内容
 function updateAllDisplays(data) {
-    // 获取目标GPA
-    const targetGPAInput = document.getElementById('target-gpa');
-    const targetGPA = targetGPAInput ? parseFloat(targetGPAInput.value) || 0 : 0;
+    // 添加日志以诊断问题
+    console.log('updateAllDisplays函数被调用');
     
     // 获取排序选项
     const completedSortBy = document.getElementById('completed-sort-by')?.value || 'name-asc';
     const uncompletedSortBy = document.getElementById('uncompleted-sort-by')?.value || 'name-asc';
-    const retakeSortBy = document.getElementById('retake-sort-by')?.value || 'name-asc';
     
     // 计算当前GPA
     const currentGPA = calculateCurrentGPA(data);
+    console.log('当前GPA计算结果:', currentGPA);
     // 使用动画效果更新当前GPA显示
     animateValue('current-gpa', 0, currentGPA, 1000);
-    
-    // 计算未修课程需要的GPA
-    const requiredGPA = calculateRequiredGPA(data, targetGPA);
-    // 使用动画效果更新未修课程需要的GPA显示
-    animateValue('required-gpa', 0, requiredGPA, 1000);
-    
-    // 同时更新选项卡面板中的统计信息
-    animateValue('current-gpa2', 0, currentGPA, 1000);
-    animateValue('required-gpa2', 0, requiredGPA, 1000);
     
     // 显示已修课程
     displayCompletedCourses(data, completedSortBy);
@@ -258,14 +257,18 @@ function updateAllDisplays(data) {
     // 显示未修课程
     displayUncompletedCourses(data, uncompletedSortBy);
     
-    // 显示推荐重修课程
-    displayRetakeCourses(data, targetGPA, retakeSortBy);
-    
     // 更新图表
+    console.log('准备调用图表绘制函数');
     if (typeof createGPATrendChart === 'function' && typeof createGradeDistributionChart === 'function') {
+        console.log('调用createGPATrendChart函数');
         createGPATrendChart(data);
+        console.log('调用createGradeDistributionChart函数');
         createGradeDistributionChart(data);
+        console.log('图表绘制函数调用完成');
     }
+    
+    // 移除对目标GPA的读取，因为图表绘制不需要它
+    // displayRetakeCourses函数依赖于目标GPA值，所以不在此处调用
 }
 
 // Create GPA trend chart

@@ -5,6 +5,10 @@ async function loadAndDisplayCourseData() {
     // 调用API获取课程数据
     console.log('正在调用window.electronAPI.loadCourseData()');
     const courseData = await window.electronAPI.loadCourseData();
+    if (!courseData || courseData.length === 0) {
+      console.warn("未检测到课程数据(courses.csv)，将在手动刷新时才提示错误");
+      return;
+    }
     console.log('window.electronAPI.loadCourseData()执行完成，返回数据长度:', courseData.length);
 
     // 解析CSV数据
@@ -30,7 +34,11 @@ async function loadAndDisplayCourseData() {
     console.log('loadAndDisplayCourseData函数执行完成');
   } catch (error) {
     console.error('加载数据失败:', error);
-    alert('加载数据失败: ' + error.message);
+    // 仅当手动刷新按钮处于禁用状态（说明是用户触发）时才提示
+    const refreshBtn = document.getElementById('refresh-data-btn');
+    if (refreshBtn && refreshBtn.disabled) {
+      alert('加载数据失败: ' + error.message);
+    }
   }
 }
 

@@ -72,6 +72,50 @@
 - [ ] 在 `events.js` 调用 `retakeVisualizer` 传入的 `gpaPathData` 和 `successRateData` 参数前加调试日志确认数据结构正确
 - [ ] 确保 `retake-visualization.js` 绘图函数在接收数据后才能执行渲染，避免空调用
 
+## 新页面“重修规划”功能
+- [x] 在左侧栏新增“重修规划”入口
+- [x] 新建 panel 容器 #retake-planning-panel 并移植原“推荐重修课程”全部 DOM
+- [ ] 更新 events.js 点击事件逻辑以适配新容器
+- [ ] 确保 window.courseData 在页面切换后依然可用
+- [ ] 验证生成方案、图表、数据填充在新页面中正常工作
+
+## 成功率计算现行规则
+- 基础成功率 `baseRate` 固定为 0.8
+- 难度系数 `getDifficultyFactor(credits)`：
+  - ≤1 学分: 0.7
+  - 2 学分: 0.85
+  - 3 学分: 1.0
+  - ≥4 学分: 1.2
+- 历史成绩系数 `historyFactor = (4.0 - originalGPA) / 4.0`
+- 目标系数 `targetFactor`：
+  - 提升幅度 gap > 2.0 → 0.4
+  - 提升幅度 gap > 1.5 → 0.6
+  - 提升幅度 gap > 1.0 → 0.8
+  - 其它 → 1.0
+- 成功率公式：
+  ```
+  successRate = baseRate * (1 / difficultyFactor) * historyFactor * targetFactor
+  ```
+  最终限制在 [0, 1] 之间
+
+## 成功率调整方案候选
+**方案A（温和提升全局基线）**
+- baseRate 增加到 0.9 或 1.0
+- historyFactor 放宽：`(4.0 - originalGPA) / 3.5`
+- targetFactor 缓和：gap > 2.0→0.6, gap >1.5→0.8, gap >1.0→0.9
+
+**方案B（倾向中高分可达）**
+- 难度系数削减影响：使用 `Math.sqrt(difficultyFactor)` 替代直接除
+- 历史成绩系数上限调高到 1.2
+- 对 gap <= 1.0 的目标直接给 100%
+
+**方案C（动态加权策略）**
+- 对低学分课程（≤2 学分）减少难度惩罚系数至 0.5
+- 引入课程类型加权（核心课 successRate *1.1，选修课 *0.95）
+- 历史系数按 `Math.max(0.5, historyFactor)` 保底
+
+选择方案后将改写 `calculateSuccessRate()` 实现
+
 ## 6. 文档与维护
 - [ ] 更新 `docs/retake-design.md`，记录实现细节
 - [ ] 在代码中添加注释，标明复用方法与数据来源

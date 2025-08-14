@@ -21,16 +21,34 @@
   /**
    * 成功率计算
    */
-  function calculateSuccessRate(originalGPA, targetGPA, credits) {
-    const baseRate = 0.8;
-    const difficultyFactor = getDifficultyFactor(credits);
-    const historyFactor = (4.0 - originalGPA) / 4.0;
+  function calculateSuccessRate(originalGPA, targetGPA, credits, courseType = 'core') {
+    // 方案C实现
+    let baseRate = 0.8;
+    
+    // 低学分课程减少难度惩罚
+    let adjustedDifficulty = getDifficultyFactor(credits);
+    if (credits <= 2) {
+      adjustedDifficulty = Math.max(0.5, adjustedDifficulty - 0.2);
+    }
+
+    // 历史成绩系数保底
+    let historyFactor = (4.0 - originalGPA) / 4.0;
+    historyFactor = Math.max(0.5, historyFactor);
+
+    // 目标难度系数
     const gap = targetGPA - originalGPA;
     let targetFactor = 1.0;
     if (gap > 2.0) targetFactor = 0.4;
     else if (gap > 1.5) targetFactor = 0.6;
     else if (gap > 1.0) targetFactor = 0.8;
-    return Math.max(0, Math.min(1, baseRate * (1 / difficultyFactor) * historyFactor * targetFactor));
+
+    // 课程类型加权
+    let typeFactor = 1.0;
+    if (courseType === 'core') typeFactor = 1.1;
+    if (courseType === 'elective') typeFactor = 0.95;
+
+    const rate = baseRate * (1 / adjustedDifficulty) * historyFactor * targetFactor * typeFactor;
+    return Math.max(0, Math.min(1, rate));
   }
 
   /**

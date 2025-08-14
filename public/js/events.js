@@ -56,26 +56,7 @@ window.electronAPI.onCrawlerProgress((data) => {
     document.getElementById('progress-text').textContent = data.message || '';
 });
 
-// 主题切换功能
-const themeToggle = document.getElementById('theme-toggle');
-const themeToggleIcon = document.querySelector('.theme-toggle-icon');
 
-// 检查本地存储中的主题设置
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    themeToggleIcon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-} else {
-    // 检查系统主题偏好
-    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    if (prefersDarkScheme.matches) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        themeToggleIcon.textContent = '🌙';
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        themeToggleIcon.textContent = '☀️';
-    }
-}
 
 // 密码显示/隐藏功能
 const passwordToggle = document.getElementById('password-toggle');
@@ -89,16 +70,7 @@ if (passwordToggle && passwordInput) {
     });
 }
 
-// 主题切换按钮点击事件
-themeToggle.addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-    // 切换主题
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    themeToggleIcon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
-});
 
 // GPA分析界面功能
 document.addEventListener('DOMContentLoaded', () => {
@@ -149,6 +121,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 加载并显示CSV数据
                 await loadAndDisplayCourseData();
+                
+                // 获取目标GPA值并更新推荐重修课程显示
+                const targetGPAInput = document.getElementById('target-gpa');
+                if (targetGPAInput && window.courseData) {
+                    const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                    console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                    updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                    console.log('updateRetakeCoursesDisplay函数执行完成');
+                }
 
             } catch (error) {
                 // 移除进度监听器
@@ -167,6 +148,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', async () => {
             await loadAndDisplayCourseData();
+            
+            // 获取目标GPA值并更新推荐重修课程显示
+            const targetGPAInput = document.getElementById('target-gpa');
+            if (targetGPAInput && window.courseData) {
+                const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                console.log('updateRetakeCoursesDisplay函数执行完成');
+            }
         });
     }
 
@@ -174,6 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(async () => {
         try {
             await loadAndDisplayCourseData();
+            
+            // 获取目标GPA值并更新推荐重修课程显示
+            const targetGPAInput = document.getElementById('target-gpa');
+            if (targetGPAInput && window.courseData) {
+                const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                console.log('updateRetakeCoursesDisplay函数执行完成');
+            }
         } catch (error) {
             console.log('自动加载用户信息失败:', error.message);
         }
@@ -208,7 +207,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 目标GPA输入框事件监听
 document.addEventListener('DOMContentLoaded', () => {
-    const targetGPAInput = document.getElementById('target-gpa');
+    // 先尝试查找重修规划面板中的目标GPA输入框（用于向后兼容）
+    let targetGPAInput = document.querySelector('#retake-planning-panel #target-gpa');
+    let targetGPAInputLocation = '#retake-planning-panel #target-gpa';
+    
+    // 如果没找到，再尝试查找主界面的目标GPA输入框
+    if (!targetGPAInput) {
+        targetGPAInput = document.querySelector('#target-gpa');
+        targetGPAInputLocation = '#target-gpa';
+    }
+    
+    console.log('正在查找目标GPA输入框，查找路径:', targetGPAInputLocation);
+    
     if (targetGPAInput) {
         console.log('目标GPA输入框已找到，正在绑定事件监听器');
         targetGPAInput.addEventListener('input', async () => {
@@ -217,17 +227,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 重新加载并显示课程数据
                 await loadAndDisplayCourseData();
                 console.log('loadAndDisplayCourseData函数执行完成');
+                
+                // 获取目标GPA值并更新推荐重修课程显示
+                const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                if (window.courseData) {
+                    console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                    updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                    console.log('updateRetakeCoursesDisplay函数执行完成');
+                }
             } catch (error) {
                 console.error('loadAndDisplayCourseData函数执行出错:', error);
             }
         });
     } else {
         console.error('未找到目标GPA输入框');
+        // 添加额外的诊断信息
+        console.log('页面上存在的相关元素:');
+        console.log('ID为target-gpa的元素数量:', document.querySelectorAll('#target-gpa').length);
+        console.log('ID为retake-planning-panel的元素数量:', document.querySelectorAll('#retake-planning-panel').length);
+        console.log('重修规划面板中的target-gpa元素数量:', document.querySelectorAll('#retake-planning-panel #target-gpa').length);
     }
 });
 
 // 重修规划生成按钮事件
-const generateRetakeBtn = document.getElementById('generate-retake-plan');
+const generateRetakeBtn = document.querySelector('#retake-planning-panel #generate-retake-plan');
 if (generateRetakeBtn) {
     generateRetakeBtn.addEventListener('click', async () => {
         try {
@@ -586,6 +609,15 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // 重新加载并显示课程数据
                 await loadAndDisplayCourseData();
+                
+                // 获取目标GPA值并更新推荐重修课程显示
+                const targetGPAInput = document.getElementById('target-gpa');
+                if (targetGPAInput && window.courseData) {
+                    const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                    console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                    updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                    console.log('updateRetakeCoursesDisplay函数执行完成');
+                }
             } catch (error) {
                 console.error('排序已修课程时出错:', error);
             }
@@ -599,6 +631,15 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // 重新加载并显示课程数据
                 await loadAndDisplayCourseData();
+                
+                // 获取目标GPA值并更新推荐重修课程显示
+                const targetGPAInput = document.getElementById('target-gpa');
+                if (targetGPAInput && window.courseData) {
+                    const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                    console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                    updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                    console.log('updateRetakeCoursesDisplay函数执行完成');
+                }
             } catch (error) {
                 console.error('排序未修课程时出错:', error);
             }
@@ -612,6 +653,15 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 // 重新加载并显示课程数据
                 await loadAndDisplayCourseData();
+                
+                // 获取目标GPA值并更新推荐重修课程显示
+                const targetGPAInput = document.getElementById('target-gpa');
+                if (targetGPAInput && window.courseData) {
+                    const targetGPA = parseFloat(targetGPAInput.value) || 0;
+                    console.log('正在调用updateRetakeCoursesDisplay函数，目标GPA:', targetGPA);
+                    updateRetakeCoursesDisplay(window.courseData, targetGPA);
+                    console.log('updateRetakeCoursesDisplay函数执行完成');
+                }
             } catch (error) {
                 console.error('排序推荐重修课程时出错:', error);
             }

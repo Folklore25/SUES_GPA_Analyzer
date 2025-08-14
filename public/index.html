@@ -13,10 +13,7 @@
 </head>
 
 <body>
-    <!-- 主题切换按钮 -->
-    <button class="theme-toggle" id="theme-toggle" aria-label="切换主题">
-        <span class="theme-toggle-icon">☀️</span>
-    </button>
+
 
     <div class="container">
         <h1>上海工程技术大学GPA分析工具</h1>
@@ -77,10 +74,6 @@
                         <span class="stat-label">当前GPA：</span>
                         <span class="stat-value" id="current-gpa">0.00</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">未修课程需要平均GPA：</span>
-                        <span class="stat-value" id="required-gpa">0.00</span>
-                    </div>
                 </div>
             </div>
 
@@ -102,6 +95,9 @@
                         <li class="sidebar-item" data-target="tabs-panel">
                             <a href="#" class="sidebar-link">课程详细</a>
                         </li>
+                        <li class="sidebar-item" data-target="retake-planning-panel">
+                            <a href="#" class="sidebar-link">重修规划</a>
+                        </li>
                     </ul>
                 </nav>
 
@@ -112,11 +108,11 @@
                         <!-- 统计信息卡片 -->
                         <div class="stats-grid">
                             <div class="stat-card">
-                                <h3>重修后GPA</h3>
+                                <h3>当前GPA</h3>
                                 <div class="stat-value" id="avg-gpa">0.00</div>
                             </div>
                             <div class="stat-card">
-                                <h3>当前总学分</h3>
+                                <h3>总学分</h3>
                                 <div class="stat-value" id="total-credits">0</div>
                             </div>
                             <div class="stat-card">
@@ -142,6 +138,39 @@
                                 <div class="chart-container">
                                     <canvas id="grade-distribution-chart"></canvas>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 新增的重修规划面板 -->
+                    <div class="content-panel" id="retake-planning-panel">
+                        <div class="courses-section">
+                            <h3>重修规划</h3>
+                            <div class="retake-plan-controls">
+                                <label for="retake-strategy">重修策略：</label>
+                                <select id="retake-strategy" class="sort-select">
+                                    <option value="conservative">保守策略</option>
+                                    <option value="balanced" selected>平衡策略</option>
+                                    <option value="aggressive">激进策略</option>
+                                </select>
+                                <button id="generate-retake-plan" class="capsule-btn">生成重修方案</button>
+                            </div>
+                            <div id="retake-plan-results" class="hidden">
+                                <div class="retake-plan-charts">
+                                    <div class="chart-card">
+                                        <h4 class="chart-title">GPA提升路径</h4>
+                                        <div class="chart-container">
+                                            <canvas id="gpa-path-chart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="chart-card">
+                                        <h4 class="chart-title">重修成功率</h4>
+                                        <div class="chart-container">
+                                            <canvas id="retake-success-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="retake-plan-report" class="retake-plan-report"></div>
                             </div>
                         </div>
                     </div>
@@ -394,7 +423,7 @@
                                 <!-- 推荐重修课程选项卡 -->
                                 <div class="tab-content" id="retake-tab">
                                     <div class="courses-section">
-                                        <h3>推荐重修课程</h3>
+                                        <h3>推荐重修课程(Legacy)</h3>
                                         <!-- 排序控件 -->
                                         <div class="sort-controls">
                                             <label for="retake-sort-by">排序方式：</label>
@@ -411,51 +440,13 @@
                                                 <span class="stat-label">理想GPA：</span>
                                                 <span class="stat-value" id="ideal-gpa">0.00</span>
                                             </div>
-                                            <div class="stat-item">
-                                                <span class="stat-label">重修后未修课程需要GPA：</span>
-                                                <span class="stat-value" id="required-after-retake-gpa">0.00</span>
-                                            </div>
+
                                         </div>
                                         <!-- 推荐重修课程列表 -->
                                         <div id="retake-courses-container">
                                             <!-- 推荐重修课程将在这里渲染 -->
                                         </div>
 
-                                        <!-- 重修规划模块 -->
-                                        <div class="retake-plan-section">
-                                            <h4>重修规划</h4>
-                                            <div class="retake-plan-controls">
-                                                <label for="retake-strategy">重修策略：</label>
-                                                <select id="retake-strategy" class="sort-select">
-                                                    <option value="conservative">保守策略</option>
-                                                    <option value="balanced" selected>平衡策略</option>
-                                                    <option value="aggressive">激进策略</option>
-                                                </select>
-
-                                                <button id="generate-retake-plan" class="capsule-btn">生成重修方案</button>
-                                            </div>
-
-                                            <div id="retake-plan-results" class="hidden">
-                                                <div class="retake-plan-charts">
-                                                    <div class="chart-card">
-                                                        <h4 class="chart-title">GPA提升路径</h4>
-                                                        <div class="chart-container">
-                                                            <canvas id="gpa-path-chart"></canvas>
-                                                        </div>
-                                                    </div>
-                                                    <div class="chart-card">
-                                                        <h4 class="chart-title">重修成功率</h4>
-                                                        <div class="chart-container">
-                                                            <canvas id="retake-success-chart"></canvas>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div id="retake-plan-report" class="retake-plan-report">
-                                                    <!-- 重修方案报告将在这里渲染 -->
-                                                </div>
-                                            </div>
-                                        </div>
                                         <!-- 按学分分组显示推荐重修课程 -->
                                         <div class="credit-groups">
                                             <div class="credit-group" data-credit="4">
