@@ -116,7 +116,7 @@ npm run build
 
 ## 许可证
 
-MIT License
+Apache 2.0
 
 ## 作者
 
