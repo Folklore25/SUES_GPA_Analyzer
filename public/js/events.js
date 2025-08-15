@@ -266,6 +266,11 @@ if (generateRetakeBtn) {
             generateRetakeBtn.disabled = true;
             generateRetakeBtn.textContent = '生成中...';
 
+            // 确保课程数据已加载
+            if (!window.courseData || window.courseData.length === 0) {
+                alert('请先获取课程数据');
+                return;
+            }
 
             // 调用重修规划引擎
             console.log('调用 window.retakeEngine.generatePlan，参数:', strategy, targetGPA);
@@ -285,20 +290,18 @@ if (generateRetakeBtn) {
 
             // 渲染图表（传递数据参数）
             if (window.retakeVisualizer) {
-                window.retakeVisualizer.createGPAPathChart(
-                    document.getElementById('gpa-path-chart'),
-                    retakePlan.gpaPathData
-                );
-                window.retakeVisualizer.createSuccessRateChart(
-                    document.getElementById('retake-success-chart'),
-                    retakePlan.successRateData
-                );
+                // 创建成功率图
+                const successRateCanvas = document.getElementById('retake-success-chart');
+                if (successRateCanvas && retakePlan.successRateData) {
+                    window.retakeVisualizer.createSuccessRateChart(successRateCanvas, retakePlan.successRateData);
+                }
             }
 
+            // 更新概览统计信息
+            updateRetakePlanSummary(retakePlan);
 
-            // 添加实时GPA计算（设计文档要求）
-            setupRealTimeGPACalculation();
-
+            // 生成智能建议
+            generateSmartAdvice(retakePlan);
 
         } catch (error) {
             console.error('生成重修方案失败:', error);
@@ -307,6 +310,128 @@ if (generateRetakeBtn) {
             generateRetakeBtn.disabled = false;
             generateRetakeBtn.textContent = '生成重修方案';
         }
+    });
+}
+
+// 更新重修计划概览统计信息
+function updateRetakePlanSummary(retakePlan) {
+    // 更新当前GPA显示
+    const currentGPADisplay = document.getElementById('current-gpa-display');
+    if (currentGPADisplay && retakePlan.originalGPA !== undefined) {
+        currentGPADisplay.textContent = retakePlan.originalGPA.toFixed(2);
+    }
+
+    // 更新预计GPA显示
+    const expectedGPAElement = document.getElementById('expected-gpa');
+    if (expectedGPAElement && retakePlan.projectedGPA !== undefined) {
+        expectedGPAElement.textContent = retakePlan.projectedGPA.toFixed(2);
+    }
+
+    // 更新最佳情况GPA显示
+    const bestCaseGPAElement = document.getElementById('best-case-gpa');
+    if (bestCaseGPAElement && retakePlan.bestCaseGPA !== undefined) {
+        bestCaseGPAElement.textContent = retakePlan.bestCaseGPA.toFixed(2);
+    }
+
+    // 更新整体成功率显示
+    const overallSuccessRateElement = document.getElementById('overall-success-rate');
+    if (overallSuccessRateElement && retakePlan.overallSuccessRate !== undefined) {
+        overallSuccessRateElement.textContent = (retakePlan.overallSuccessRate * 100).toFixed(0) + '%';
+    }
+
+    // 更新风险等级显示
+    const riskLevelElement = document.getElementById('risk-level');
+    if (riskLevelElement && retakePlan.riskLevel) {
+        riskLevelElement.textContent = retakePlan.riskLevel;
+        // 根据风险等级设置颜色
+        switch (retakePlan.riskLevel) {
+            case '低风险':
+                riskLevelElement.style.color = 'green';
+                break;
+            case '中风险':
+                riskLevelElement.style.color = 'orange';
+                break;
+            case '高风险':
+                riskLevelElement.style.color = 'red';
+                break;
+            default:
+                riskLevelElement.style.color = 'black';
+        }
+    }
+}
+
+// 生成智能建议
+function generateSmartAdvice(retakePlan) {
+    const adviceContainer = document.getElementById('retake-advice');
+    if (!adviceContainer) return;
+
+    adviceContainer.innerHTML = '';
+
+    // 如果没有重修计划数据，直接返回
+    if (!retakePlan || !retakePlan.courses) return;
+
+    const courses = retakePlan.courses;
+    const adviceList = [];
+
+    // 1. 目标合理性评估
+    courses.forEach(course => {
+        const gap = course.targetGrade - course.originalGrade;
+        if (gap > 1.5) {
+            adviceList.push({
+                type: 'warning',
+                message: `⚠ 您为${course.name}设定的目标${course.targetGrade}与原成绩${course.originalGrade}差距较大，建议调整为${(course.originalGrade + 1.0).toFixed(1)}或${(course.originalGrade + 1.3).toFixed(1)}`
+            });
+        }
+    });
+
+    // 2. 优化方案推荐
+    if (courses.length > 6) {
+        adviceList.push({
+            type: 'warning',
+            message: `⚠ 当前选择${courses.length}门课程，建议不超过6门以确保学习质量`
+        });
+    } else if (courses.length === 0) {
+        adviceList.push({
+            type: 'info',
+            message: 'ℹ 暂未选择任何重修课程，建议根据推荐列表选择合适的课程'
+        });
+    }
+
+    // 3. 风险预警提示
+    if (retakePlan.overallSuccessRate !== undefined) {
+        if (retakePlan.overallSuccessRate < 0.6) {
+            adviceList.push({
+                type: 'danger',
+                message: '❌ 整体成功率较低，强烈建议重新规划或调整目标'
+            });
+        } else if (retakePlan.overallSuccessRate < 0.8) {
+            adviceList.push({
+                type: 'warning',
+                message: '⚠ 整体成功率适中，建议适当调低1-2门课程目标'
+            });
+        } else {
+            adviceList.push({
+                type: 'success',
+                message: '✅ 方案合理，预期成功率高'
+            });
+        }
+    }
+
+    // 4. 时间规划建议
+    if (courses.length > 0) {
+        const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
+        const advice = document.createElement('p');
+        advice.className = 'advice info';
+        advice.textContent = `ℹ 建议合理安排时间，按每学分需要25-30小时学习时间计算，${totalCredits}学分约需要${Math.round(totalCredits * 25)}-${Math.round(totalCredits * 30)}小时`;
+        adviceContainer.appendChild(advice);
+    }
+
+    // 渲染建议
+    adviceList.forEach(adviceItem => {
+        const advice = document.createElement('p');
+        advice.className = `advice ${adviceItem.type}`;
+        advice.textContent = adviceItem.message;
+        adviceContainer.appendChild(advice);
     });
 }
 
@@ -424,26 +549,7 @@ function generateSmartAdvice() {
         }
     });
 
-    // 2. 优化方案推荐
-    if (courses.length > 4) {
-        const advice = document.createElement('p');
-        advice.className = 'advice warning';
-        advice.textContent = `⚠ 当前选择${courses.length}门课程，建议不超过4门`;
-        adviceContainer.appendChild(advice);
-    }
-
-    // 3. 时间规划建议
-    const totalHours = courses.reduce((sum, course) => {
-        const gap = course.targetGrade - course.originalGrade;
-        return sum + (gap * 25); // 每提升0.3绩点约25小时
-    }, 0);
-
-    const advice = document.createElement('p');
-    advice.className = 'advice info';
-    advice.textContent = `ℹ 预计需要${Math.round(totalHours)}小时，建议每周投入15小时，约${Math.round(totalHours / 15 / 4)}个月完成`;
-    adviceContainer.appendChild(advice);
-
-    // 4. 风险预警提示
+    // 2. 风险预警提示
     const avgSuccessRate = courses.reduce((sum, course) =>
         sum + course.successRate, 0) / courses.length;
 

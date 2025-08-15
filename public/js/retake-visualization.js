@@ -5,35 +5,6 @@
  */
 
 (function () {
-  function createGPAPathChart(canvas, gpaPathData) {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (canvas.gpaChart instanceof Chart) {
-      canvas.gpaChart.destroy();
-    }
-    console.log("绘制GPAPathChart数据:", gpaPathData);
-    canvas.gpaChart = new Chart(ctx, {
-      type: "bar",
-      data: gpaPathData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: "top"
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 4.0
-          }
-        }
-      }
-    });
-  }
-
   function createSuccessRateChart(canvas, successRateData) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -74,7 +45,6 @@
   }
 
   window.retakeVisualizer = {
-    createGPAPathChart,
     createSuccessRateChart
   };
 })();

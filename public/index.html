@@ -68,7 +68,7 @@
             <div class="gpa-controls">
                 <div class="target-gpa-input">
                     <label for="target-gpa">目标GPA：</label>
-                    <input type="number" id="target-gpa" step="0.1" min="0" max="4" inputmode="decimal" placeholder="请输入目标GPA">
+                    <input type="number" id="target-gpa" step="0.1" min="0" max="4" inputmode="decimal" placeholder="请输入目标GPA" value="3.7">
                 </div>
                 <div class="gpa-stats">
                     <div class="stat-item">
@@ -165,7 +165,33 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="retake-plan-summary">
+                                    <h4>重修方案概览</h4>
+                                    <div class="summary-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">当前GPA:</span>
+                                            <span class="stat-value" id="current-gpa-display">0.00</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">预计GPA:</span>
+                                            <span class="stat-value" id="expected-gpa">0.00</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">最佳情况GPA:</span>
+                                            <span class="stat-value" id="best-case-gpa">0.00</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">整体成功率:</span>
+                                            <span class="stat-value" id="overall-success-rate">0%</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">风险等级:</span>
+                                            <span class="stat-value" id="risk-level">低风险</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div id="retake-plan-report" class="retake-plan-report"></div>
+                                <div id="retake-advice" class="retake-advice"></div>
                             </div>
                         </div>
                     </div>

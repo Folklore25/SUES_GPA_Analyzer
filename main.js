@@ -52,8 +52,13 @@ app.on('window-all-closed', function () {
 // 启动爬虫进程
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
   return new Promise((resolve, reject) => {
-    // Fork子进程执行爬虫
-    const crawlerProcess = fork(path.join(__dirname, 'src/crawler/crawler.js'));
+    // Fork子进程执行爬虫，传递环境变量
+    const crawlerProcess = fork(path.join(__dirname, 'src/crawler/crawler.js'), [], {
+      env: {
+        ...process.env,
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '0'
+      }
+    });
     
     // 向爬虫进程发送登录信息
     crawlerProcess.send({ type: 'login', data: loginInfo });
