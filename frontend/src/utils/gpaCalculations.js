@@ -1,6 +1,6 @@
 /**
  * This file contains the canonical GPA calculation and chart data processing logic,
- * ported from the original data.js and adapted for the ECharts library.
+ * ported directly from the original data.js to ensure 100% accuracy.
  */
 
 // Helper to convert semester code to Chinese representation
@@ -18,7 +18,29 @@ const convertSemesterToChinese = (semesterCode) => {
 };
 
 /**
+ * Calculates the current GPA.
+ * Rule: Only includes courses where pass === 'passed' and GPA > 0.
+ */
+export function calculateCurrentGPA(data) {
+    const passedCourses = data.filter(course => course.pass === 'passed' && parseFloat(course.course_gpa) > 0);
+    if (passedCourses.length === 0) return 0;
+    
+    let totalPoints = 0;
+    let totalCredits = 0;
+    
+    passedCourses.forEach(course => {
+        const credits = parseFloat(course.course_weight) || 0;
+        const gpa = parseFloat(course.course_gpa) || 0;
+        totalPoints += credits * gpa;
+        totalCredits += credits;
+    });
+    
+    return totalCredits > 0 ? totalPoints / totalCredits : 0;
+}
+
+/**
  * Processes data for the GPA Trend chart.
+ * Returns data for both semester GPA and cumulative GPA.
  */
 export function processGpaTrendData(data) {
     const semesterGPAs = {};
@@ -64,7 +86,8 @@ export function processGpaTrendData(data) {
 }
 
 /**
- * Processes data for the Grade Distribution chart (by letter grade).
+ * Processes data for the Grade Distribution chart.
+ * Rule: Counts letter grades from the 'course_score' field.
  */
 export function processGradeDistributionData(data) {
     const gradeCount = {
@@ -79,110 +102,53 @@ export function processGradeDistributionData(data) {
         }
     });
 
+    // Filter out grades with zero counts for a cleaner chart
     return Object.keys(gradeCount)
-        .map(grade => ({ name: grade, value: gradeCount[grade] })) // Use 'value' for ECharts
+        .map(grade => ({ name: grade, value: gradeCount[grade] })) // ECharts uses name/value
         .filter(item => item.value > 0);
 }
 
 /**
- * Processes data for the Course Attribute Distribution chart.
+ * Processes data for the Credit vs. GPA bubble chart.
+ * Each bubble represents a (credit, gpa) coordinate.
+ * The size of the bubble represents the number of courses at that coordinate.
+ */
+export function processCreditGpaBubbleData(data) {
+  const pointMap = new Map();
+
+  data.forEach(course => {
+    const credits = parseFloat(course.course_weight);
+    const gpa = parseFloat(course.course_gpa);
+
+    if (isNaN(credits) || isNaN(gpa)) return;
+
+    const key = `${credits}-${gpa}`;
+    if (pointMap.has(key)) {
+      const point = pointMap.get(key);
+      point.count += 1;
+      point.courseNames.push(course.course_name);
+    } else {
+      pointMap.set(key, {
+        credits,
+        gpa,
+        count: 1,
+        courseNames: [course.course_name],
+      });
+    }
+  });
+
+  // ECharts scatter data format: [credit, gpa, count, courseNames]
+  return Array.from(pointMap.values()).map(p => [
+    p.credits,
+    p.gpa,
+    p.count,
+    p.courseNames.join('\n') // Join course names for tooltip
+  ]);
+}
+
+/**
+ * Placeholder for a future chart. Returns an empty array.
  */
 export function processCourseAttributeData(data) {
-    const attributeCredits = {};
-
-    data.forEach(course => {
-        const attribute = course.course_attribute || '未知属性';
-        const credits = parseFloat(course.course_weight) || 0;
-        if (credits > 0) {
-            if (!attributeCredits[attribute]) {
-                attributeCredits[attribute] = 0;
-            }
-            attributeCredits[attribute] += credits;
-        }
-    });
-
-    return Object.keys(attributeCredits)
-        .map(attr => ({ name: attr, value: attributeCredits[attr] }))
-        .filter(item => item.value > 0);
-}
-
-/**
- * Processes data for the Credit vs. GPA scatter plot.
- */
-export function processCreditGpaScatterData(data) {
-    return data
-        .map(course => {
-            const credits = parseFloat(course.course_weight);
-            const gpa = parseFloat(course.course_gpa);
-            if (!isNaN(credits) && !isNaN(gpa)) {
-                return [credits, gpa, course.course_name]; // [x, y, courseName]
-            }
-            return null;
-        })
-        .filter(item => item !== null);
-}
-
-/**
- * Calculates the current overall GPA, matching the original logic.
- * @param {Array} data The course data.
- * @returns {number} The current GPA.
- */
-export function calculateCurrentGPA(data) {
-    if (!data || data.length === 0) {
-        return 0;
-    }
-    // Filter for passed courses with GPA > 0, as per original logic.
-    const passedCourses = data.filter(course => course.pass === 'passed' && parseFloat(course.course_gpa) > 0);
-    
-    if (passedCourses.length === 0) {
-        return 0;
-    }
-
-    let totalPoints = 0;
-    let totalCredits = 0;
-
-    passedCourses.forEach(course => {
-        const credits = parseFloat(course.course_weight) || 0;
-        const gpa = parseFloat(course.course_gpa) || 0;
-        totalPoints += credits * gpa;
-        totalCredits += credits;
-    });
-
-    if (totalCredits === 0) {
-        return 0;
-    }
-
-    return totalPoints / totalCredits;
-}
-
-/**
- * Calculates all summary statistics.
- * @param {Array} courseData The course data.
- * @returns {object} An object with totalCredits, passedCount, failedCount, and currentGPA.
- */
-export function calculateSummaryStats(courseData) {
-  if (!courseData) {
-    return {
-      totalCredits: 0,
-      passedCount: 0,
-      failedCount: 0,
-      currentGPA: 0,
-    };
-  }
-
-  // "已修总学分" (Total Taken Credits) - only passed and failed courses
-  const totalCredits = courseData
-    .filter(c => c.pass === 'passed' || c.pass === 'failed')
-    .reduce((sum, course) => sum + (parseFloat(course.course_weight) || 0), 0);
-
-  // "已通过课程" (Passed Courses)
-  const passedCount = courseData.filter(c => c.pass === 'passed').length;
-
-  // "已挂科课程" (Failed Courses)
-  const failedCount = courseData.filter(c => c.pass === 'failed').length;
-
-  // "当前加权GPA" (Current Weighted GPA)
-  const currentGPA = calculateCurrentGPA(courseData);
-
-  return { totalCredits, passedCount, failedCount, currentGPA };
+  return [];
 }

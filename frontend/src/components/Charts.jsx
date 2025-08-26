@@ -4,8 +4,7 @@ import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
 import {
   processGpaTrendData,
   processGradeDistributionData,
-  processCourseAttributeData,
-  processCreditGpaScatterData
+  processCreditGpaBubbleData // Changed from scatter to bubble
 } from '../utils/gpaCalculations';
 
 // ECharts base option for styling to match MUI theme
@@ -73,7 +72,7 @@ function Charts({ courseData }) {
           name: '学期GPA',
           type: 'line',
           smooth: true,
-          symbol: 'none',
+          symbolSize: 8, // Restore the nodes
           lineStyle: { width: 3 },
           areaStyle: { opacity: 0.3 },
           data: data.semesterGpa,
@@ -82,7 +81,7 @@ function Charts({ courseData }) {
           name: '累计GPA',
           type: 'line',
           smooth: true,
-          symbol: 'none',
+          symbolSize: 8, // Restore the nodes
           lineStyle: { width: 3, type: 'dashed' },
           areaStyle: { opacity: 0.15 },
           data: data.cumulativeGpa,
@@ -112,45 +111,36 @@ function Charts({ courseData }) {
     };
   }, [courseData, baseOption]);
 
-  const attributeDistOptions = useMemo(() => {
-    const data = processCourseAttributeData(courseData);
+  const bubbleOptions = useMemo(() => {
+    const data = processCreditGpaBubbleData(courseData);
     return {
       ...baseOption,
-      tooltip: { trigger: 'item' },
-      legend: { show: false },
-      series: [
-        {
-          name: '课程属性学分分布',
-          type: 'pie',
-          radius: '70%',
-          data: data,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
-        },
-      ],
-    };
-  }, [courseData, baseOption]);
-
-  const scatterOptions = useMemo(() => {
-    const data = processCreditGpaScatterData(courseData);
-    return {
-      ...baseOption,
-      xAxis: { ...baseOption.xAxis, type: 'value', name: '学分' },
-      yAxis: { ...baseOption.yAxis, type: 'value', name: '绩点' },
+      xAxis: { ...baseOption.xAxis, type: 'value', name: '学分', min: 0 },
+      yAxis: { ...baseOption.yAxis, type: 'value', name: '绩点', min: 0, max: 4 },
+      visualMap: {
+        show: false,
+        min: 1,
+        max: Math.max(...data.map(d => d[2])),
+        dimension: 2, // Map size to the 3rd item in data array (count)
+        inRange: {
+          symbolSize: [10, 40] // Bubble size range
+        }
+      },
       tooltip: {
         trigger: 'item',
-        formatter: (params) => `${params.data[2]}<br/>学分: ${params.data[0]}<br/>绩点: ${params.data[1]}`,
+        formatter: (params) => {
+          const [credit, gpa, count, courseNames] = params.data;
+          return `<b>${count} 门课程</b><br/>
+                  学分: ${credit}<br/>
+                  绩点: ${gpa.toFixed(2)}<br/>
+                  <hr style="margin: 5px 0"/>
+                  ${courseNames.replace(/\n/g, '<br/>')}`;
+        },
       },
       series: [
         {
           name: '课程',
           type: 'scatter',
-          symbolSize: 10,
           data: data,
         },
       ],
@@ -159,9 +149,9 @@ function Charts({ courseData }) {
 
   const chartList = [
     { title: '学期/累计GPA趋势图', options: gpaTrendOptions },
-    { title: '学分 vs 绩点分布', options: scatterOptions },
+    { title: '学分 vs 绩点气泡图', options: bubbleOptions },
     { title: '成绩等级分布', options: gradeDistOptions },
-    { title: '课程属性学分分布', options: attributeDistOptions },
+    // The 4th chart is temporarily removed as requested
   ];
 
   return (
