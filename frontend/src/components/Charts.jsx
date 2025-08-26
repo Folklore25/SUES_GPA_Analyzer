@@ -136,6 +136,14 @@ function Charts({ courseData }) {
                   <hr style="margin: 5px 0"/>
                   ${courseNames.replace(/\n/g, '<br/>')}`;
         },
+        position: function (point, params, dom, rect, size) {
+          // If the bubble is in the top 30% of the chart, move the tooltip down and right
+          if (point[1] < size.viewSize[1] * 0.3) {
+            return [point[0] + 10, point[1] + 10];
+          }
+          // Otherwise, use default positioning
+          return null;
+        },
       },
       series: [
         {

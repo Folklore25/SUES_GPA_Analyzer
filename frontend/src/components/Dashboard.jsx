@@ -71,7 +71,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const summaryStats = useMemo(() => {
     if (!courseData) return null;
     const totalCredits = courseData
-      .filter(c => c.pass === 'passed' || c.pass === 'failed')
+      .filter(c => c.pass === 'passed' || c.pass === 'failed') 
       .reduce((sum, course) => sum + (parseFloat(course.course_weight) || 0), 0);
     const passedCount = courseData.filter(c => c.pass === 'passed').length;
     const failedCount = courseData.filter(c => c.pass === 'failed').length;
