@@ -4,7 +4,8 @@ import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
 import {
   processGpaTrendData,
   processGradeDistributionData,
-  processCreditGpaBubbleData // Changed from scatter to bubble
+  processCreditGpaBubbleData,
+  processGpaHeatmapData // Import the new heatmap data processor
 } from '../utils/gpaCalculations';
 
 // ECharts base option for styling to match MUI theme
@@ -155,18 +156,56 @@ function Charts({ courseData }) {
     };
   }, [courseData, baseOption]);
 
+  const heatmapOptions = useMemo(() => {
+    const data = processGpaHeatmapData(courseData);
+    return {
+      ...baseOption,
+      tooltip: {
+        position: 'top',
+        formatter: (params) => `平均绩点: ${params.value[2].toFixed(2)}`
+      },
+      grid: { height: '60%', top: '10%' },
+      xAxis: {
+        type: 'category',
+        data: data.semesters,
+        splitArea: { show: true }
+      },
+      yAxis: {
+        type: 'category',
+        data: data.credits,
+        splitArea: { show: true }
+      },
+      visualMap: {
+        min: 1,
+        max: 4,
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: '5%',
+        inRange: { color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'] },
+        textStyle: { color: theme.palette.text.primary }
+      },
+      series: [{
+        name: '学期表现',
+        type: 'heatmap',
+        data: data.data,
+        label: { show: true, formatter: (params) => params.value[2] },
+        emphasis: {
+          itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+        }
+      }]
+    };
+  }, [courseData, baseOption, theme.palette.text.primary]);
+
   const chartList = [
     { title: '学期/累计GPA趋势图', options: gpaTrendOptions },
+    { title: '成绩等级分布', options: gradeDistOptions },    
     { title: '学分 vs 绩点气泡图', options: bubbleOptions },
-    { title: '成绩等级分布', options: gradeDistOptions },
-    // The 4th chart is temporarily removed as requested
+    { title: '学期表现热力图', options: heatmapOptions },
   ];
 
   return (
     <Box>
-      <Typography variant="h5" component="h2" gutterBottom>
-        数据可视化
-      </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
         {chartList.map((chart, index) => (
           <Card key={index}>

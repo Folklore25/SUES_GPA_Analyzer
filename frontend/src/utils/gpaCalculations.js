@@ -39,6 +39,14 @@ export function calculateCurrentGPA(data) {
 }
 
 /**
+ * Gets the total credits of courses that are included in GPA calculation.
+ */
+export function getGpaTotalCredits(data) {
+    const passedCourses = data.filter(course => course.pass === 'passed' && parseFloat(course.course_gpa) > 0);
+    return passedCourses.reduce((sum, course) => sum + (parseFloat(course.course_weight) || 0), 0);
+}
+
+/**
  * Processes data for the GPA Trend chart.
  * Returns data for both semester GPA and cumulative GPA.
  */
@@ -147,8 +155,47 @@ export function processCreditGpaBubbleData(data) {
 }
 
 /**
- * Placeholder for a future chart. Returns an empty array.
+ * Processes data for the Performance Heatmap.
+ * X-axis: Semester, Y-axis: Credits, Color: Average GPA
  */
-export function processCourseAttributeData(data) {
-  return [];
+export function processGpaHeatmapData(data) {
+  const heatmapData = new Map(); // Key: "semester-credit", Value: { totalGpa: 0, count: 0 }
+
+  data.forEach(course => {
+    const semester = course.course_semester.split(',')[0].trim(); // Use first semester if multiple
+    const credits = parseFloat(course.course_weight);
+    const gpa = parseFloat(course.course_gpa);
+
+    if (!semester || isNaN(credits) || isNaN(gpa)) return;
+
+    const key = `${semester}-${credits}`;
+    if (heatmapData.has(key)) {
+      const entry = heatmapData.get(key);
+      entry.totalGpa += gpa;
+      entry.count += 1;
+    } else {
+      heatmapData.set(key, { totalGpa: gpa, count: 1 });
+    }
+  });
+
+  const semesters = [...new Set(data.map(c => c.course_semester.split(',')[0].trim()))].sort();
+  const creditValues = [...new Set(data.map(c => parseFloat(c.course_weight)))].filter(c => !isNaN(c)).sort((a, b) => a - b);
+
+  const echartsData = [];
+  semesters.forEach((semester, sIndex) => {
+    creditValues.forEach((credit, cIndex) => {
+      const key = `${semester}-${credit}`;
+      if (heatmapData.has(key)) {
+        const entry = heatmapData.get(key);
+        const avgGpa = parseFloat((entry.totalGpa / entry.count).toFixed(2));
+        echartsData.push([sIndex, cIndex, avgGpa]);
+      }
+    });
+  });
+
+  return {
+    data: echartsData,
+    semesters: semesters.map(s => convertSemesterToChinese(s)),
+    credits: creditValues.map(c => `${c}学分`)
+  };
 }

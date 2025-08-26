@@ -95,7 +95,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
       <Paper elevation={1} square sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" sx={{ ml: 2 }}>仪表盘</Typography>
+        <Typography variant="h6" sx={{ ml: 2 }}>今天你学习了吗？</Typography>
         <Box>
           <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">{theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}</IconButton>
