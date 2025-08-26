@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 const IniHelper = require('./src/utils/iniHelper');
@@ -36,6 +36,9 @@ function createWindow() {
       preload: path.join(__dirname, 'src/renderer/preload.js')
     }
   });
+
+  // Remove the application menu
+  Menu.setApplicationMenu(null);
 
   // Load from Vite dev server in development, or from local file in production
   if (!app.isPackaged) {

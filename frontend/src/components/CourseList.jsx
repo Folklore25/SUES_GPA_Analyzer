@@ -28,33 +28,39 @@ function CreditGroupedTable({ title, courses }) {
       </Typography>
       {sortedCredits.map(credit => (
         <Card key={credit} sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" component="h4" gutterBottom>
-              {credit} 学分课程
+          <Box sx={{ 
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#007ccc' : '#007ccc',
+            color: (theme) => theme.palette.mode === 'dark' ? '#e8e8e8' : '#ffffffff',
+            p: 1.5, 
+            borderBottom: 1, 
+            borderColor: 'divider' 
+          }}>
+            <Typography variant="h6" component="h4" sx={{ fontWeight: 'bold' }}>
+              {credit} 学分课程 
             </Typography>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>课程名称</TableCell>
-                    <TableCell>成绩</TableCell>
-                    <TableCell>绩点</TableCell>
-                    <TableCell>开课学期</TableCell>
+          </Box>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>课程名称</TableCell>
+                  <TableCell>成绩</TableCell>
+                  <TableCell>绩点</TableCell>
+                  <TableCell>开课学期</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {groupedCourses[credit].map((course) => (
+                  <TableRow key={course.course_code}>
+                    <TableCell>{course.course_name}</TableCell>
+                    <TableCell>{course.course_score}</TableCell>
+                    <TableCell>{course.course_gpa}</TableCell>
+                    <TableCell>{course.course_semester}</TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {groupedCourses[credit].map((course) => (
-                    <TableRow key={course.course_code}>
-                      <TableCell>{course.course_name}</TableCell>
-                      <TableCell>{course.course_score}</TableCell>
-                      <TableCell>{course.course_gpa}</TableCell>
-                      <TableCell>{course.course_semester}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       ))}
     </Box>
@@ -72,7 +78,7 @@ function CourseList({ courseData }) {
     [courseData]
   );
 
-  const ungradedCourses = useMemo(() => 
+  const unrepairedCourses = useMemo(() => 
     courseData.filter(c => c.pass === 'unrepaired'), // Match the new status from the crawler
     [courseData]
   );
@@ -81,7 +87,7 @@ function CourseList({ courseData }) {
     <Box>
       <CreditGroupedTable title="已通过课程" courses={passedCourses} />
       <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} />
-      <CreditGroupedTable title="未修课程" courses={ungradedCourses} />
+      <CreditGroupedTable title="未修课程" courses={unrepairedCourses} />
     </Box>
   );
 }

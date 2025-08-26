@@ -173,3 +173,5 @@ cython_debug/
 node_modules/
 courses.csv
 user-info.ini
+
+out/
