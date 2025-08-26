@@ -171,4 +171,5 @@ cython_debug/
 .pypirc
 # Node.js dependencies
 node_modules/
-
+courses.csv
+user-info.ini
