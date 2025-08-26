@@ -54,19 +54,13 @@ export function processGpaTrendData(data) {
         semesterCredits[sem] > 0 ? parseFloat((semesterGPAs[sem] / semesterCredits[sem]).toFixed(2)) : 0
     );
     
-    let cumulativeGPA = [];
-    let totalWeight = 0;
-    let totalGPA = 0;
-    
-    semesters.forEach(sem => {
-        totalGPA += semesterGPAs[sem];
-        totalWeight += semesterCredits[sem];
-        cumulativeGPA.push(parseFloat((totalGPA / totalWeight).toFixed(2)));
-    });
+    // Calculate the final, overall current GPA to be displayed as a flat line
+    const finalCurrentGPA = calculateCurrentGPA(data);
+    const cumulativeGpa = Array(semesters.length).fill(parseFloat(finalCurrentGPA.toFixed(2)));
     
     const labels = semesters.map(s => convertSemesterToChinese(s));
 
-    return { labels, semesterGpa: gpas, cumulativeGpa: cumulativeGPA };
+    return { labels, semesterGpa: gpas, cumulativeGpa };
 }
 
 /**
