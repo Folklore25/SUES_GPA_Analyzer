@@ -6,7 +6,7 @@
   "scripts": {
     "start": "chcp 65001 && electron .",
     "build": "npm run build:frontend && electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ../outputs  --icon=logo.ico --overwrite",
-    "test": "node_modules\\.bin\\jest",
+    "test": "vitest",
     "dev:frontend": "vite frontend --config vite.config.js",
     "build:frontend": "vite build frontend --config vite.config.js",
     "dev:electron": "electron .",
@@ -56,6 +56,7 @@
     "electron": "^37.3.0",
     "electron-builder": "^24.8.0",
     "electron-packager": "^17.1.2",
+    "jsdom": "^26.1.0",
     "vite": "^7.1.3",
     "vitest": "^3.2.4"
   },

@@ -73,15 +73,15 @@ function CourseList({ courseData }) {
   );
 
   const ungradedCourses = useMemo(() => 
-    courseData.filter(c => c.pass === 'ungraded'),
+    courseData.filter(c => c.pass === 'unrepaired'), // Match the new status from the crawler
     [courseData]
   );
 
   return (
     <Box>
       <CreditGroupedTable title="已通过课程" courses={passedCourses} />
-      <CreditGroupedTable title="已挂科课程" courses={failedCourses} />
-      <CreditGroupedTable title="未出分/未修课程" courses={ungradedCourses} />
+      <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} />
+      <CreditGroupedTable title="未修课程" courses={ungradedCourses} />
     </Box>
   );
 }

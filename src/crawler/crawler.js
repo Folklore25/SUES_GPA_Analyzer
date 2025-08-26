@@ -4,9 +4,6 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 const config = require('./config.json');
 
-// This will be set by the 'start' message from the main process
-let CRAWLER_USER_DATA_PATH = null;
-
 // 发送消息给父进程
 function sendMessage(type, data) {
   if (process.send) {
@@ -30,38 +27,26 @@ function parseCourseRow(rowElement) {
     const courseName = courseNameElement ? (courseNameElement.getAttribute('data-text') || '').trim() : '';
     
     // 获取成绩和绩点
-    const scoreText = (tds[5] ? tds[5].textContent : '').trim();
-    const gpaText = (tds[6] ? tds[6].textContent : '').trim();
-
-    // New, safer logic that relies primarily on the score field.
-    let pass = 'ungraded'; // Default to ungraded
-
-    const numericScore = parseFloat(scoreText);
-
-    // First, check for definitive numeric scores
-    if (!isNaN(numericScore)) {
-        if (numericScore >= 60) {
-            pass = 'passed';
-        } else { // < 60
-            pass = 'failed';
-        }
-    } else {
-        // Handle non-numeric text scores
-        const upperScore = scoreText.toUpperCase();
-        if (upperScore === 'F' || upperScore === '不及格') {
-            pass = 'failed';
-        } else if (upperScore === '合格' || upperScore === '通过' || upperScore.includes('优秀') || upperScore.includes('良好') || upperScore.includes('中等')) {
-            pass = 'passed';
-        }
-        // If the score is something else (like '--', '', or a placeholder), it remains 'ungraded'.
-    }
-
-    // Handle numerical conversion for weight
+    const score = tds[5] ? tds[5].textContent.trim() : '--';
+    const gpa = tds[6] ? tds[6].textContent.trim() : '--';
+    
+    // 处理数值转换
     let courseWeight = 0;
     try {
       courseWeight = parseFloat(tds[4].textContent.trim()) || 0;
     } catch (e) {
       courseWeight = 0;
+    }
+    
+    // Get pass status based on the new 3-state rule
+    const passStatus = (rowElement.getAttribute('data-result') || '').toUpperCase();
+    let pass;
+    if (passStatus === 'PASSED') {
+      pass = 'passed';
+    } else if (passStatus === 'UNREPAIRED' || passStatus === 'TAKING') {
+      pass = 'unrepaired';
+    } else {
+      pass = 'failed';
     }
     
     return {
@@ -70,8 +55,8 @@ function parseCourseRow(rowElement) {
       course_semester: tds[2] ? tds[2].textContent.trim() : '',
       course_attribute: tds[3] ? tds[3].textContent.trim() : '',
       course_weight: courseWeight,
-      course_score: scoreText || '--',
-      course_gpa: gpaText || '--',
+      course_score: score,
+      course_gpa: gpa,
       pass: pass
     };
   } catch (error) {
@@ -279,7 +264,8 @@ class CoursesScraper {
       
       if (coursesData.length > 0) {
         sendMessage('progress', { message: '正在保存数据到CSV...' });
-        const csvFilePath = path.join(CRAWLER_USER_DATA_PATH, 'courses.csv');
+        // Use the userDataPath to save the file to the correct location
+        const csvFilePath = path.join(userDataPath, 'courses.csv');
         await saveToCSV(coursesData, csvFilePath);
       } else {
         console.log('没有爬取到任何课程数据');
@@ -300,16 +286,14 @@ class CoursesScraper {
 }
 
 // 监听父进程消息
+let userDataPath; // Variable to hold the user data path
 process.on('message', async (message) => {
-  if (message.type === 'start') {
+  if (message.type === 'start') { // Adjusted to match main.js
     try {
-      // Set the userData path received from the main process
-      CRAWLER_USER_DATA_PATH = message.data.userDataPath;
-      if (!CRAWLER_USER_DATA_PATH) {
-        throw new Error('Crawler did not receive the userData path.');
-      }
-
+      // Store the userDataPath and get loginInfo from the new data structure
+      userDataPath = message.data.userDataPath;
       const scraper = new CoursesScraper(message.data.loginInfo);
+      
       await scraper.setupBrowser();
       const coursesData = await scraper.scrapeCourses();
       await scraper.close();
