@@ -4,12 +4,14 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 const config = require('./config.json');
 
+let parentPort = null;
+
 // 发送消息给父进程
 function sendMessage(type, data) {
   // Progress reporting is disabled as per user request.
   // Only send final 'complete' or 'error' messages.
-  if (process.send && (type === 'complete' || type === 'error')) {
-    process.send({ type, data });
+  if (parentPort && (type === 'complete' || type === 'error')) {
+    parentPort.postMessage({ type, data });
   }
 }
 
@@ -289,8 +291,15 @@ class CoursesScraper {
 
 // 监听父进程消息
 let userDataPath; // Variable to hold the user data path
-process.on('message', async (message) => {
-  if (message.type === 'start') { // Adjusted to match main.js
+
+// Listen for messages from the parent process
+process.parentPort.on('message', async (e) => {
+  const message = e.data;
+  
+  if (message.type === 'init') {
+    // Store the port for communication
+    parentPort = e.ports[0];
+  } else if (message.type === 'start') {
     try {
       // Store the userDataPath and get loginInfo from the new data structure
       userDataPath = message.data.userDataPath;
@@ -315,6 +324,9 @@ process.on('message', async (message) => {
     }
   }
 });
+
+// Start listening for messages
+process.parentPort.start();
 
 // 错误处理
 process.on('uncaughtException', (error) => {

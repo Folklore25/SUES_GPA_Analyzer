@@ -1,8 +1,7 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, utilityProcess } = require('electron');
 const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
-const { fork, spawn } = require('child_process');
 const IniHelper = require('./src/utils/iniHelper');
 const keytar = require('keytar');
 
@@ -138,14 +137,16 @@ async function ensureBrowserInstalled() {
   return new Promise((resolve, reject) => {
     mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
 
-    const playwrightCliPath = path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked'), 'node_modules', 'playwright', 'cli.js');
+    const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
 
-    const downloaderProcess = spawn(
-      process.execPath,
-      [playwrightCliPath, 'install', 'chromium'],
+    const downloaderProcess = utilityProcess.fork(
+      playwrightCliPath,
+      ['install', 'chromium'],
       {
         env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
         cwd: app.getAppPath(),
+        serviceName: 'playwright-browser-installer',
+        stdio: 'pipe' // Explicitly set stdio to ensure streams are created
       }
     );
 
@@ -202,19 +203,15 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
     return new Promise((resolve, reject) => {
       let settled = false;
 
-      let crawlerPath;
-      if (app.isPackaged) {
-        crawlerPath = path.join(path.dirname(app.getAppPath()), 'app.asar.unpacked', 'src', 'crawler', 'crawler.js');
-      } else {
-        crawlerPath = path.join(__dirname, 'src', 'crawler', 'crawler.js');
-      }
+      const crawlerPath = path.join(__dirname, 'src', 'crawler', 'crawler.js');
 
-      const crawlerProcess = fork(crawlerPath, [], {
-        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
-        silent: true
-      });
-
-      crawlerProcess.on('message', (message) => {
+      // Create a message channel for communication
+      const { MessageChannelMain } = require('electron');
+      const { port1, port2 } = new MessageChannelMain();
+      
+      // Listen for messages from the child process
+      port1.on('message', (e) => {
+        const message = e.data;
         if (settled) return;
         if (message.type === 'complete') {
           settled = true;
@@ -225,6 +222,14 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         }
       });
 
+      port1.start(); // Start listening for messages
+
+      const crawlerProcess = utilityProcess.fork(crawlerPath, [], {
+        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+        serviceName: 'sues-gpa-crawler',
+        stdio: 'pipe' // Ensure stdio streams are piped
+      });
+
       crawlerProcess.on('error', (error) => {
         if (settled) return;
         settled = true;
@@ -232,6 +237,7 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       });
 
       crawlerProcess.on('exit', (code) => {
+        port1.close(); // Clean up the port
         if (settled) return;
         settled = true;
         if (code !== 0) {
@@ -241,7 +247,11 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         }
       });
 
-      crawlerProcess.send({
+      // Transfer port2 to the child process
+      crawlerProcess.postMessage({ type: 'init' }, [port2]);
+      
+      // Send the start message with data
+      crawlerProcess.postMessage({
         type: 'start',
         data: { loginInfo: loginInfo, userDataPath: app.getPath('userData') }
       });
