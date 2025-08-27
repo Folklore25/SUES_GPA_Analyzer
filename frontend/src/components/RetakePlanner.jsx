@@ -130,6 +130,7 @@ function RetakePlanner({ courseData }) {
                     <TableHead>
                       <TableRow>
                         <TableCell>课程名称</TableCell>
+                        <TableCell>学分</TableCell>
                         <TableCell>原始绩点</TableCell>
                         <TableCell>重修性价比</TableCell> 
                         <TableCell>预期绩点</TableCell>
@@ -141,6 +142,7 @@ function RetakePlanner({ courseData }) {
                         return (
                           <TableRow key={course.course_code}>
                             <TableCell>{course.course_name}</TableCell>
+                            <TableCell>{course.course_weight}</TableCell>
                             <TableCell>{course.course_gpa}</TableCell>
                             <TableCell>
                               <Chip label={rating.label} color={rating.color.split('.')[0]} size="small" />

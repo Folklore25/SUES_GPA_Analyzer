@@ -116,6 +116,7 @@ function Charts({ courseData }) {
     const data = processCreditGpaBubbleData(courseData);
     return {
       ...baseOption,
+      grid: { ...baseOption.grid, right: 65 }, // Increase right margin for axis name
       xAxis: { ...baseOption.xAxis, type: 'value', name: '学分', min: 0 },
       yAxis: { ...baseOption.yAxis, type: 'value', name: '绩点', min: 0, max: 4 },
       visualMap: {
