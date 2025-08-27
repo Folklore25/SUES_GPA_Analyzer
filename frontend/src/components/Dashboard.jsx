@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { parseCSV } from '../utils/csvParser';
 import { 
   Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, 
-  Card, CardContent, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle 
+  Card, CardContent, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Avatar
 } from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
@@ -11,6 +11,9 @@ import SchoolIcon from '@mui/icons-material/School';
 import StarIcon from '@mui/icons-material/Star';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import InfoIcon from '@mui/icons-material/Info';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import EmailIcon from '@mui/icons-material/Email';
 import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
@@ -39,6 +42,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [isAboutDialogOpen, setAboutDialogOpen] = useState(false);
   const theme = useTheme();
 
   // State for download progress dialog
@@ -169,7 +173,8 @@ function Dashboard({ userCredentials, toggleTheme }) {
         <Box>
           <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
           <Button onClick={handleGetData} disabled={isLoading || isDownloading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
-          <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">{theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}</IconButton>
+          <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit"><Brightness7Icon /></IconButton>
+          <IconButton sx={{ ml: 1 }} onClick={() => setAboutDialogOpen(true)} color="inherit"><InfoIcon /></IconButton>
         </Box>
       </Paper>
 
@@ -220,6 +225,40 @@ function Dashboard({ userCredentials, toggleTheme }) {
         <DialogActions>
           <Button onClick={handleConfirmDelete} color="error">删除</Button>
           <Button onClick={() => setConfirmDialogOpen(false)} autoFocus>取消</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isAboutDialogOpen}
+        onClose={() => setAboutDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>关于作者</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', p: 2 }}>
+            <Avatar
+              alt="Folklore25"
+              src="https://cdn.nlark.com/yuque/0/2025/jpeg/59114766/1755070767771-dd2d8439-b07a-48ae-b34d-1c4d74119e8b.jpeg?x-oss-process=image%2Fformat%2Cwebp%2Finterlace%2C1"
+              sx={{ width: 80, height: 80, mb: 2 }}
+            />
+            <Typography variant="h6" component="h3">Folklore25</Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+              SUES里一位默默热爱着这个学校的金融学学生，希望各位留子能好好利用这个玩具，申到大家心仪的大学。共勉。
+            </Typography>
+            <Divider sx={{ my: 2, width: '100%' }} />
+            <Box>
+              <IconButton href="https://github.com/Folklore25" target="_blank">
+                <GitHubIcon />
+              </IconButton>
+              <IconButton href="mailto:rockboy1125@gmail.com">
+                <EmailIcon />
+              </IconButton>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAboutDialogOpen(false)}>关闭</Button>
         </DialogActions>
       </Dialog>
 

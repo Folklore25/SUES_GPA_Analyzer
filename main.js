@@ -202,10 +202,11 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
     return new Promise((resolve, reject) => {
       let settled = false;
 
-      // Adjust path for packaged app
-      let crawlerPath = path.join(__dirname, 'src/crawler/crawler.js');
+      let crawlerPath;
       if (app.isPackaged) {
-        crawlerPath = crawlerPath.replace('app.asar', 'app.asar.unpacked');
+        crawlerPath = path.join(path.dirname(app.getAppPath()), 'app.asar.unpacked', 'src', 'crawler', 'crawler.js');
+      } else {
+        crawlerPath = path.join(__dirname, 'src', 'crawler', 'crawler.js');
       }
 
       const crawlerProcess = fork(crawlerPath, [], {
