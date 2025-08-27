@@ -26,6 +26,47 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     setPlan(result);
   };
 
+  const projectedGpa = useMemo(() => {
+    if (!plan) return null;
+    const originalGPA = calculateCurrentGPA(courseData);
+    const totalGpaCredits = getGpaTotalCredits(courseData);
+    if (totalGpaCredits === 0) return originalGPA;
+
+    const gpaImprovement = retakePlan.reduce((sum, course) => {
+      const targetGpaForCalc = 4.0; // Assume a target of 4.0 for any retaken course
+      const improvement = (targetGpaForCalc - parseFloat(course.course_gpa)) * (parseFloat(course.course_weight) || 0);
+      return sum + improvement;
+    }, 0);
+
+    return originalGPA + (gpaImprovement / totalGpaCredits);
+  }, [plan, courseData, retakePlan]);
+
+  const gaugeOptions = useMemo(() => {
+    if (projectedGpa === null) return {};
+    const originalGPA = calculateCurrentGPA(courseData);
+    return {
+      series: [
+        {
+          type: 'gauge',
+          startAngle: 180,
+          endAngle: 0,
+          min: Math.floor(originalGPA * 10) / 10,
+          max: 4,
+          splitNumber: 8,
+          axisLine: { lineStyle: { width: 18, color: [[0.25, '#FF6E76'], [0.5, '#ee8b2fff'], [0.75, '#f4f958ff'], [1, '#1ea911ff']] } },
+          progress: { show: true, width: 18, itemStyle: { color: 'auto' } },
+          pointer: { show: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { show: false },
+          title: { show: false },
+          detail: { valueAnimation: true, fontSize: 30, offsetCenter: [0, '10%'], formatter: '{value}', color: 'auto' },
+          data: [{ value: parseFloat(projectedGpa.toFixed(3)) }]
+        }
+      ]
+    };
+  }, [projectedGpa, courseData]);
+
   const heatmapOptions = useMemo(() => {
     if (!plan || !plan.heatmap) return {};
     
@@ -36,7 +77,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         position: 'top',
         formatter: (params) => `第 ${params.value[0] + 1} 周<br/>总课时: ${params.value[2]}h`
       },
-            grid: { height: '60%', top: '10%', left: '10%', right: '5%' },
+      grid: { height: '60%', top: '10%', left: '10%', right: '5%' },
       xAxis: {
         type: 'category',
         data: plan.heatmap.weeks,
@@ -86,47 +127,62 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
           </Typography>
         </Paper>
       ) : (
-        <>
-          {/* --- CONTROLS --- */}
-          <Card component={Paper} sx={{ p: 2, mb: 3 }}>
-            <CardContent>
-              <Typography gutterBottom>重修周期 (学期数)</Typography>
-              <Slider
-                value={numSemesters}
-                onChange={(e, newValue) => setNumSemesters(newValue)}
-                aria-labelledby="retake-semesters-slider"
-                valueLabelDisplay="auto"
-                step={1}
-                marks
-                min={1}
-                max={4}
-                sx={{ maxWidth: 400, mb: 2 }}
-              />
-
-              <Typography gutterBottom>排课策略</Typography>
-              <ToggleButtonGroup
-                value={strategy}
-                exclusive
-                onChange={handleStrategyChange}
-                aria-label="scheduling strategy"
-                color="primary"
-              >
-                <ToggleButton value="conservative">保守</ToggleButton>
-                <ToggleButton value="aggressive">激进</ToggleButton>
-                <ToggleButton value="burnout">爆肝</ToggleButton>
-              </ToggleButtonGroup>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Button 
-                variant="contained" 
-                onClick={handleGenerateSchedule}
-                disabled={retakePlan.length === 0}
-              >
-                生成学期计划
-              </Button>
-            </CardContent>
-          </Card>
+        <Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3, mb: 3 }}>
+            {/* --- CONTROLS --- */}
+            <Card component={Paper} sx={{ p: 2 }}>
+              <CardContent>
+                <Typography gutterBottom>重修周期 (学期数)</Typography>
+                <Slider
+                  value={numSemesters}
+                  onChange={(e, newValue) => setNumSemesters(newValue)}
+                  aria-labelledby="retake-semesters-slider"
+                  valueLabelDisplay="auto"
+                  step={1}
+                  marks
+                  min={1}
+                  max={4}
+                  sx={{ maxWidth: 400, mb: 2 }}
+                />
+  
+                <Typography gutterBottom>排课策略</Typography>
+                <ToggleButtonGroup
+                  value={strategy}
+                  exclusive
+                  onChange={handleStrategyChange}
+                  aria-label="scheduling strategy"
+                  color="primary"
+                >
+                  <ToggleButton value="conservative">保守</ToggleButton>
+                  <ToggleButton value="aggressive">激进</ToggleButton>
+                  <ToggleButton value="burnout">爆肝</ToggleButton>
+                </ToggleButtonGroup>
+  
+                <Divider sx={{ my: 2 }} />
+  
+                <Button 
+                  variant="contained" 
+                  onClick={handleGenerateSchedule}
+                  disabled={retakePlan.length === 0}
+                >
+                  生成学期计划
+                </Button>
+              </CardContent>
+            </Card>
+            {/* --- GAUGE CHART --- */}
+            <Card component={Paper} sx={{ p: 2 }}>
+              <CardContent>
+                <Typography variant="h6" align="center">预估新GPA</Typography>
+                {plan ? (
+                  <ReactECharts option={gaugeOptions} style={{ height: 220 }} notMerge={true} />
+                ) : (
+                  <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography color="text.secondary">点击生成计划后显示</Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Box>
 
           {/* --- RESULTS DISPLAY --- */}
           {plan && (
@@ -156,7 +212,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
               </Card>
             </Box>
           )}
-        </>
+        </Box>
       )}
     </Box>
   );
