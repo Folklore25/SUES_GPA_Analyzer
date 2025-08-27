@@ -151,10 +151,14 @@ function CourseList({ courseData, retakePlan, onAddToPlan }) {
       const gpa = parseFloat(course.course_gpa);
       const name = course.course_name || '';
       const credit = parseFloat(course.course_weight);
+      const attribute = course.course_attribute || '';
 
       // GPA Range Filter
-      if (!isNaN(gpa) && (gpa < gpaRange[0] || gpa > gpaRange[1])) {
-        return false;
+      const gpaFilterIsActive = gpaRange[0] > 0 || gpaRange[1] < 4;
+      if (isNaN(gpa)) {
+        if (gpaFilterIsActive) return false; // Hide courses without GPA if filter is active
+      } else {
+        if (gpa < gpaRange[0] || gpa > gpaRange[1]) return false;
       }
 
       // Credit Filter

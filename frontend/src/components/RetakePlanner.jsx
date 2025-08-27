@@ -6,13 +6,14 @@ import {
   Button, Card, CardContent, Typography, Box, Paper, useTheme, Slider, 
   ToggleButton, ToggleButtonGroup, Divider
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 // Main component for the new Scheduling Workbench
 function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
   const theme = useTheme();
   const [numSemesters, setNumSemesters] = useState(2);
   const [strategy, setStrategy] = useState('conservative');
-  const [plan, setPlan] = useState(null); // This will hold the entire result from generateSchedule
+  const [plan, setPlan] = useState(null); // This will hold the entire result { schedule, heatmap }
 
   const handleStrategyChange = (event, newStrategy) => {
     if (newStrategy !== null) {
@@ -35,7 +36,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         position: 'top',
         formatter: (params) => `第 ${params.value[0] + 1} 周<br/>课时: ${params.value[2]}h`
       },
-      grid: { height: '60%', top: '10%' },
+      grid: { height: '60%', top: '10%', left: '10%', right: '5%' },
       xAxis: {
         type: 'category',
         data: plan.heatmap.weeks,
@@ -53,7 +54,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         orient: 'horizontal',
         left: 'center',
         bottom: '5%',
-        inRange: { color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'].reverse() },
+        inRange: { color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'] },
         textStyle: { color: theme.palette.text.primary }
       },
       series: [{
@@ -72,74 +73,86 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     <Box>
       <Typography variant="h5" component="h2" gutterBottom>智能排课工作台</Typography>
       
-      {/* --- CONTROLS --- */}
-      <Card component={Paper} sx={{ p: 2, mb: 3 }}>
-        <CardContent>
-          <Typography gutterBottom>重修周期 (学期数)</Typography>
-          <Slider
-            value={numSemesters}
-            onChange={(e, newValue) => setNumSemesters(newValue)}
-            aria-labelledby="retake-semesters-slider"
-            valueLabelDisplay="auto"
-            step={1}
-            marks
-            min={1}
-            max={4}
-            sx={{ maxWidth: 400, mb: 2 }}
-          />
-
-          <Typography gutterBottom>排课策略</Typography>
-          <ToggleButtonGroup
-            value={strategy}
-            exclusive
-            onChange={handleStrategyChange}
-            aria-label="scheduling strategy"
-            color="primary"
-          >
-            <ToggleButton value="conservative">保守</ToggleButton>
-            <ToggleButton value="aggressive">激进</ToggleButton>
-            <ToggleButton value="burnout">爆肝</ToggleButton>
-          </ToggleButtonGroup>
-
-          <Divider sx={{ my: 2 }} />
-
-          <Button 
-            variant="contained" 
-            onClick={handleGenerateSchedule}
-            disabled={retakePlan.length === 0}
-          >
-            生成学期计划
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* --- RESULTS DISPLAY --- */}
-      {plan && (
-        <Box>
-          <Typography variant="h6" gutterBottom>生成的学习计划</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: `repeat(${plan.schedule.length}, 1fr)` }, gap: 2, mb: 3 }}>
-            {plan.schedule.map(semesterPlan => (
-              <Card component={Paper} key={semesterPlan.semester}>
-                <CardContent>
-                  <Typography variant="h6">第 {semesterPlan.semester} 学期</Typography>
-                  <Typography variant="body2" color="text.secondary">预估总课时: {semesterPlan.hours}</Typography>
-                  <ul style={{ paddingLeft: 20, marginTop: 10 }}>
-                    {semesterPlan.courses.map(course => (
-                      <li key={course.course_code}>{course.course_name}</li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-
-          <Typography variant="h6" gutterBottom>周学习压力热力图</Typography>
-          <Card component={Paper}>
+      {retakePlan.length === 0 ? (
+        <Paper sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>
+          <InfoOutlinedIcon color="primary" sx={{ fontSize: 40 }} />
+          <Typography variant="h6">您的重修计划为空</Typography>
+          <Typography color="text.secondary">
+            请先前往“课程列表”标签页，点击课程右侧的 `+` 号，将课程添加至您的计划中。
+          </Typography>
+        </Paper>
+      ) : (
+        <>
+          {/* --- CONTROLS --- */}
+          <Card component={Paper} sx={{ p: 2, mb: 3 }}>
             <CardContent>
-              <ReactECharts option={heatmapOptions} style={{ height: 250 }} notMerge={true} />
+              <Typography gutterBottom>重修周期 (学期数)</Typography>
+              <Slider
+                value={numSemesters}
+                onChange={(e, newValue) => setNumSemesters(newValue)}
+                aria-labelledby="retake-semesters-slider"
+                valueLabelDisplay="auto"
+                step={1}
+                marks
+                min={1}
+                max={4}
+                sx={{ maxWidth: 400, mb: 2 }}
+              />
+
+              <Typography gutterBottom>排课策略</Typography>
+              <ToggleButtonGroup
+                value={strategy}
+                exclusive
+                onChange={handleStrategyChange}
+                aria-label="scheduling strategy"
+                color="primary"
+              >
+                <ToggleButton value="conservative">保守</ToggleButton>
+                <ToggleButton value="aggressive">激进</ToggleButton>
+                <ToggleButton value="burnout">爆肝</ToggleButton>
+              </ToggleButtonGroup>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Button 
+                variant="contained" 
+                onClick={handleGenerateSchedule}
+                disabled={retakePlan.length === 0}
+              >
+                生成学期计划
+              </Button>
             </CardContent>
           </Card>
-        </Box>
+
+          {/* --- RESULTS DISPLAY --- */}
+          {plan && (
+            <Box>
+              <Typography variant="h6" gutterBottom>生成的学习计划</Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: `repeat(${plan.schedule.length}, 1fr)` }, gap: 2, mb: 3 }}>
+                {plan.schedule.map(semesterPlan => (
+                  <Card component={Paper} key={semesterPlan.semester}>
+                    <CardContent>
+                      <Typography variant="h6">第 {semesterPlan.semester} 学期</Typography>
+                      <Typography variant="body2" color="text.secondary">预估总课时: {semesterPlan.hours}</Typography>
+                      <ul style={{ paddingLeft: 20, marginTop: 10 }}>
+                        {semesterPlan.courses.map(course => (
+                          <li key={course.course_code}>{course.course_name}</li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+
+              <Typography variant="h6" gutterBottom>周学习压力热力图</Typography>
+              <Card component={Paper}>
+                <CardContent>
+                  <ReactECharts option={heatmapOptions} style={{ height: 250 }} notMerge={true} />
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+        </>
       )}
     </Box>
   );
