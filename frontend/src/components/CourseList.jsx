@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, Card, 
-  TextField, Slider, ToggleButton, ToggleButtonGroup, TableSortLabel
+  TextField, Slider, ToggleButton, ToggleButtonGroup, TableSortLabel, IconButton
 } from '@mui/material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 // Helper to sort arrays
 function stableSort(array, comparator) {
@@ -50,7 +51,7 @@ const headCells = [
   { id: 'course_semester', label: '开课学期' },
 ];
 
-function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort }) {
+function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort, retakePlan = [], onAddToPlan }) {
   const groupedCourses = useMemo(() => groupCoursesByCredit(courses), [courses]);
   const sortedCredits = useMemo(() => Object.keys(groupedCourses).sort((a, b) => b - a), [groupedCourses]);
 
@@ -95,18 +96,27 @@ function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort }) {
                       </TableSortLabel>
                     </TableCell>
                   ))}
+                  <TableCell>添加计划</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {stableSort(groupedCourses[credit], getComparator(order, orderBy)).map((course) => (
-                  <TableRow key={course.course_code}>
-                    <TableCell>{course.course_name}</TableCell>
-                    <TableCell>{course.course_weight}</TableCell>
-                    <TableCell>{course.course_score}</TableCell>
-                    <TableCell>{course.course_gpa}</TableCell>
-                    <TableCell>{course.course_semester}</TableCell>
-                  </TableRow>
-                ))}
+                {stableSort(groupedCourses[credit], getComparator(order, orderBy)).map((course) => {
+                  const isAdded = retakePlan.some(p => p.course_code === course.course_code);
+                  return (
+                    <TableRow key={course.course_code}>
+                      <TableCell>{course.course_name}</TableCell>
+                      <TableCell>{course.course_weight}</TableCell>
+                      <TableCell>{course.course_score}</TableCell>
+                      <TableCell>{course.course_gpa}</TableCell>
+                      <TableCell>{course.course_semester}</TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => onAddToPlan(course)} disabled={isAdded} size="small">
+                          <AddCircleOutlineIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -116,7 +126,7 @@ function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort }) {
   );
 }
 
-function CourseList({ courseData }) {
+function CourseList({ courseData, retakePlan, onAddToPlan }) {
   // State for sorting and filtering
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('course_semester');
@@ -222,9 +232,9 @@ function CourseList({ courseData }) {
         </Box>
       </Paper>
 
-      <CreditGroupedTable title="已通过课程" courses={passedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} />
-      <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} />
-      <CreditGroupedTable title="未修课程" courses={unrepairedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} />
+      <CreditGroupedTable title="已通过课程" courses={passedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
+      <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
+      <CreditGroupedTable title="未修课程" courses={unrepairedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
     </Box>
   );
 }

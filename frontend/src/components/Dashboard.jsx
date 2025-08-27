@@ -15,7 +15,8 @@ import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
 import RetakePlanner from './RetakePlanner';
-import DownloadProgress from './DownloadProgress'; // Import the new component
+import DownloadProgress from './DownloadProgress';
+import PlanFAB from './PlanFAB'; // Import the new component
 
 function StatCard({ title, value, icon }) {
   return (
@@ -43,6 +44,19 @@ function Dashboard({ userCredentials, toggleTheme }) {
   // State for download progress dialog
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadInfo, setDownloadInfo] = useState({});
+
+  // State for the global retake plan
+  const [retakePlan, setRetakePlan] = useState([]);
+
+  const handleAddToPlan = (course) => {
+    if (!retakePlan.find(c => c.course_code === course.course_code)) {
+      setRetakePlan([...retakePlan, course]);
+    }
+  };
+
+  const handleRemoveFromPlan = (courseCode) => {
+    setRetakePlan(retakePlan.filter(c => c.course_code !== courseCode));
+  };
 
   useEffect(() => {
     const initialLoad = async () => {
@@ -135,6 +149,10 @@ function Dashboard({ userCredentials, toggleTheme }) {
     setActiveTab(newValue);
   };
 
+  const handleNavigateToPlanner = () => {
+    setActiveTab(2); // 2 is the index for RetakePlanner tab
+  };
+
   if (isInitialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -177,8 +195,8 @@ function Dashboard({ userCredentials, toggleTheme }) {
           <Box sx={{ p: 3 }}>
             {!courseData && <Typography>暂无数据，请点击“获取/刷新数据”按钮。</Typography>}
             {courseData && activeTab === 0 && <Charts courseData={courseData} />}
-            {courseData && activeTab === 1 && <CourseList courseData={courseData} />}
-            {courseData && activeTab === 2 && <RetakePlanner courseData={courseData} />}
+            {courseData && activeTab === 1 && <CourseList courseData={courseData} retakePlan={retakePlan} onAddToPlan={handleAddToPlan} />}
+            {courseData && activeTab === 2 && <RetakePlanner courseData={courseData} retakePlan={retakePlan} onRemoveFromPlan={handleRemoveFromPlan} />}
           </Box>
         </Paper>
       </Container>
@@ -204,6 +222,12 @@ function Dashboard({ userCredentials, toggleTheme }) {
           <Button onClick={() => setConfirmDialogOpen(false)} autoFocus>取消</Button>
         </DialogActions>
       </Dialog>
+
+      <PlanFAB 
+        retakePlan={retakePlan} 
+        onRemoveFromPlan={handleRemoveFromPlan} 
+        onNavigateToPlanner={handleNavigateToPlanner} 
+      />
     </Box>
   );
 }
