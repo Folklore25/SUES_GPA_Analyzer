@@ -1,10 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, Card, 
   TextField, Slider, ToggleButton, ToggleButtonGroup, TableSortLabel, IconButton
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { formatSemester } from '../utils/formatter';
 
 // Helper to sort arrays
 function stableSort(array, comparator) {
@@ -52,7 +51,7 @@ const headCells = [
   { id: 'course_semester', label: '开课学期' },
 ];
 
-function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort, retakePlan = [], onAddToPlan }) {
+function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort, retakePlan = [], onAddToPlan, formatSemester }) {
   const groupedCourses = useMemo(() => groupCoursesByCredit(courses), [courses]);
   const sortedCredits = useMemo(() => Object.keys(groupedCourses).sort((a, b) => b - a), [groupedCourses]);
 
@@ -109,7 +108,7 @@ function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort, ret
                       <TableCell>{course.course_weight}</TableCell>
                       <TableCell>{course.course_score}</TableCell>
                       <TableCell>{course.course_gpa}</TableCell>
-                      <TableCell>{formatSemester(course.course_semester)}</TableCell>
+                      <TableCell>{formatSemester ? formatSemester(course.course_semester) : '--'}</TableCell>
                       <TableCell>
                         <IconButton onClick={() => onAddToPlan(course)} disabled={isAdded} size="small">
                           <AddCircleOutlineIcon />
@@ -134,6 +133,14 @@ function CourseList({ courseData, retakePlan, onAddToPlan }) {
   const [searchText, setSearchText] = useState('');
   const [creditFilter, setCreditFilter] = useState('all');
   const [gpaRange, setGpaRange] = useState([0, 4]);
+  const [formatSemester, setFormatSemester] = useState(null);
+
+  // Dynamically import the formatter utility
+  useEffect(() => {
+    import('../utils/formatter').then(module => {
+      setFormatSemester(() => module.formatSemester);
+    });
+  }, []);
 
   const handleCreditChange = (event, newCredit) => {
     if (newCredit !== null) {
@@ -237,9 +244,9 @@ function CourseList({ courseData, retakePlan, onAddToPlan }) {
         </Box>
       </Paper>
 
-      <CreditGroupedTable title="已通过课程" courses={passedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
-      <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
-      <CreditGroupedTable title="未修课程" courses={unrepairedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} />
+      <CreditGroupedTable title="已通过课程" courses={passedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} formatSemester={formatSemester} />
+      <CreditGroupedTable title="已挂科/重修课程" courses={failedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} formatSemester={formatSemester} />
+      <CreditGroupedTable title="未修课程" courses={unrepairedCourses} order={order} orderBy={orderBy} onRequestSort={handleRequestSort} retakePlan={retakePlan} onAddToPlan={onAddToPlan} formatSemester={formatSemester} />
     </Box>
   );
 }

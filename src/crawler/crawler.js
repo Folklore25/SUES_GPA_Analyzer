@@ -1,7 +1,8 @@
-const { chromium } = require('playwright');
-const fs = require('fs').promises;
-const path = require('path');
-const { JSDOM } = require('jsdom');
+// These modules will be imported dynamically when needed
+// const { chromium } = require('playwright');
+// const fs = require('fs').promises;
+// const path = require('path');
+// const { JSDOM } = require('jsdom');
 
 // Log the current working directory and filename for debugging
 console.log('爬虫脚本启动');
@@ -102,6 +103,8 @@ async function saveToCSV(data, filePath) {
       return false;
     }
 
+    const fs = require('fs').promises;
+
     // CSV头部
     const headers = [
       'course_name',
@@ -162,6 +165,7 @@ class CoursesScraper {
         console.warn('PLAYWRIGHT_BROWSERS_PATH环境变量未设置');
       }
       
+      const { chromium } = require('playwright');
       this.browser = await chromium.launch({
         headless: config.browser.headless,
         args: config.browser.args
@@ -283,6 +287,7 @@ class CoursesScraper {
       const coursesData = [];
       if (tableHtml) {
         // 使用JSDOM解析HTML
+        const { JSDOM } = require('jsdom');
         const dom = new JSDOM(tableHtml);
         const doc = dom.window.document;
         

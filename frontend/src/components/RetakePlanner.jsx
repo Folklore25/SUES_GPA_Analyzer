@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { calculateCurrentGPA, getGpaTotalCredits } from '../utils/gpaCalculations';
-import { generateSchedule } from '../utils/scheduler';
-import ReactECharts from 'echarts-for-react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { 
   Button, Card, CardContent, Typography, Box, Paper, useTheme, Slider, 
   ToggleButton, ToggleButtonGroup, Divider
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+// Dynamic imports
+const ReactECharts = lazy(() => import('echarts-for-react'));
 
 // Main component for the new Scheduling Workbench
 function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
@@ -14,6 +14,19 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
   const [numSemesters, setNumSemesters] = useState(2);
   const [strategy, setStrategy] = useState('conservative');
   const [plan, setPlan] = useState(null); // This will hold the entire result { schedule, heatmap }
+  const [gpaCalculations, setGpaCalculations] = useState(null);
+  const [scheduler, setScheduler] = useState(null);
+
+  // Load utilities
+  useEffect(() => {
+    import('../utils/gpaCalculations').then(module => {
+      setGpaCalculations(module);
+    });
+    
+    import('../utils/scheduler').then(module => {
+      setScheduler(module);
+    });
+  }, []);
 
   const handleStrategyChange = (event, newStrategy) => {
     if (newStrategy !== null) {
@@ -21,13 +34,17 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     }
   };
 
-  const handleGenerateSchedule = () => {
-    const result = generateSchedule(retakePlan, numSemesters, strategy);
+  const handleGenerateSchedule = async () => {
+    if (!scheduler) return;
+    
+    const result = scheduler.generateSchedule(retakePlan, numSemesters, strategy);
     setPlan(result);
   };
 
   const projectedGpa = useMemo(() => {
-    if (!plan) return null;
+    if (!plan || !gpaCalculations) return null;
+    
+    const { calculateCurrentGPA, getGpaTotalCredits } = gpaCalculations;
     const originalGPA = calculateCurrentGPA(courseData);
     const totalGpaCredits = getGpaTotalCredits(courseData);
     if (totalGpaCredits === 0) return originalGPA;
@@ -39,10 +56,12 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     }, 0);
 
     return originalGPA + (gpaImprovement / totalGpaCredits);
-  }, [plan, courseData, retakePlan]);
+  }, [plan, courseData, retakePlan, gpaCalculations]);
 
   const gaugeOptions = useMemo(() => {
-    if (projectedGpa === null) return {};
+    if (projectedGpa === null || !gpaCalculations) return {};
+    
+    const { calculateCurrentGPA } = gpaCalculations;
     const originalGPA = calculateCurrentGPA(courseData);
     return {
       series: [
@@ -65,12 +84,14 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         }
       ]
     };
-  }, [projectedGpa, courseData]);
+  }, [projectedGpa, courseData, gpaCalculations]);
 
   const heatmapOptions = useMemo(() => {
     if (!plan || !plan.heatmap) return {};
     
-    const maxHours = Math.max(...plan.heatmap.data.map(item => item[2]), 5);
+    // Find the actual max hours in the data, but cap it at 12 for visualization
+    const actualMaxHours = plan.heatmap.data.length > 0 ? Math.max(...plan.heatmap.data.map(item => item[2])) : 0;
+    const maxHours = Math.min(Math.max(actualMaxHours, 5), 12); // At least 5, at most 12
 
     return {
       tooltip: {
@@ -90,7 +111,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
       },
       visualMap: {
         min: 0,
-        max: maxHours,
+        max: 12, // Fixed max value of 12
         calculable: true,
         orient: 'horizontal',
         left: 'center',
@@ -114,6 +135,13 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     };
   }, [plan, theme.palette.text.primary]);
 
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 220 }}>
+      <Typography>图表加载中...</Typography>
+    </Box>
+  );
+
   return (
     <Box>
       <Typography variant="h5" component="h2" gutterBottom>智能排课工作台</Typography>
@@ -123,7 +151,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
           <InfoOutlinedIcon color="primary" sx={{ fontSize: 40 }} />
           <Typography variant="h6">您的重修计划为空</Typography>
           <Typography color="text.secondary">
-            请先前往“课程列表”标签页，点击课程右侧的 `+` 号，将课程添加至您的计划中。
+            请先前往"课程列表"标签页，点击课程右侧的 `+` 号，将课程添加至您的计划中。
           </Typography>
         </Paper>
       ) : (
@@ -163,7 +191,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
                 <Button 
                   variant="contained" 
                   onClick={handleGenerateSchedule}
-                  disabled={retakePlan.length === 0}
+                  disabled={retakePlan.length === 0 || !scheduler}
                 >
                   生成学期计划
                 </Button>
@@ -174,7 +202,9 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
               <CardContent>
                 <Typography variant="h6" align="center">预估新GPA</Typography>
                 {plan ? (
-                  <ReactECharts option={gaugeOptions} style={{ height: 220 }} notMerge={true} />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ReactECharts option={gaugeOptions} style={{ height: 220 }} notMerge={true} />
+                  </Suspense>
                 ) : (
                   <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography color="text.secondary">点击生成计划后显示</Typography>
@@ -207,7 +237,9 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
               <Typography variant="h6" gutterBottom>周学习压力热力图</Typography>
               <Card component={Paper}>
                 <CardContent>
-                  <ReactECharts option={heatmapOptions} style={{ height: 250 }} notMerge={true} />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <ReactECharts option={heatmapOptions} style={{ height: 250 }} notMerge={true} />
+                  </Suspense>
                 </CardContent>
               </Card>
             </Box>

@@ -1,12 +1,8 @@
-import React, { useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
-import {
-  processGpaTrendData,
-  processGradeDistributionData,
-  processCreditGpaBubbleData,
-  processGpaHeatmapData // Import the new heatmap data processor
-} from '../utils/gpaCalculations';
+
+// Dynamic import for ReactECharts
+const ReactECharts = lazy(() => import('echarts-for-react'));
 
 // ECharts base option for styling to match MUI theme
 const useEChartsBaseOption = () => {
@@ -52,15 +48,48 @@ const useEChartsBaseOption = () => {
 function Charts({ courseData }) {
   const theme = useTheme();
   const baseOption = useEChartsBaseOption();
+  
+  // State for chart data
+  const [gpaTrendData, setGpaTrendData] = useState(null);
+  const [gradeDistributionData, setGradeDistributionData] = useState(null);
+  const [creditGpaBubbleData, setCreditGpaBubbleData] = useState(null);
+  const [gpaHeatmapData, setGpaHeatmapData] = useState(null);
+
+  // Load chart data when courseData changes
+  useEffect(() => {
+    if (!courseData || courseData.length === 0) return;
+    
+    // Import utilities and process data
+    import('../utils/gpaCalculations').then(({ 
+      processGpaTrendData, 
+      processGradeDistributionData, 
+      processCreditGpaBubbleData, 
+      processGpaHeatmapData 
+    }) => {
+      // Process GPA trend data
+      setGpaTrendData(processGpaTrendData(courseData));
+      
+      // Process grade distribution data
+      setGradeDistributionData(processGradeDistributionData(courseData));
+      
+      // Process credit vs GPA bubble data
+      setCreditGpaBubbleData(processCreditGpaBubbleData(courseData));
+      
+      // Process heatmap data
+      const filteredCourses = courseData.filter(c => (parseFloat(c.course_weight) || 0) <= 4);
+      setGpaHeatmapData(processGpaHeatmapData(filteredCourses));
+    });
+  }, [courseData]);
 
   const gpaTrendOptions = useMemo(() => {
-    const data = processGpaTrendData(courseData);
+    if (!gpaTrendData) return {};
+    
     return {
       ...baseOption,
       xAxis: {
         ...baseOption.xAxis,
         type: 'category',
-        data: data.labels,
+        data: gpaTrendData.labels,
       },
       yAxis: {
         ...baseOption.yAxis,
@@ -76,7 +105,7 @@ function Charts({ courseData }) {
           symbolSize: 8, // Restore the nodes
           lineStyle: { width: 3 },
           areaStyle: { opacity: 0.3 },
-          data: data.semesterGpa,
+          data: gpaTrendData.semesterGpa,
         },
         {
           name: '累计GPA',
@@ -85,14 +114,15 @@ function Charts({ courseData }) {
           symbolSize: 8, // Restore the nodes
           lineStyle: { width: 3, type: 'dashed' },
           areaStyle: { opacity: 0.15 },
-          data: data.cumulativeGpa,
+          data: gpaTrendData.cumulativeGpa,
         },
       ],
     };
-  }, [courseData, baseOption]);
+  }, [gpaTrendData, baseOption]);
 
   const gradeDistOptions = useMemo(() => {
-    const data = processGradeDistributionData(courseData);
+    if (!gradeDistributionData) return {};
+    
     return {
       ...baseOption,
       tooltip: { trigger: 'item' },
@@ -106,14 +136,15 @@ function Charts({ courseData }) {
           label: { show: false, position: 'center' },
           emphasis: { label: { show: true, fontSize: '20', fontWeight: 'bold' } },
           labelLine: { show: false },
-          data: data,
+          data: gradeDistributionData,
         },
       ],
     };
-  }, [courseData, baseOption]);
+  }, [gradeDistributionData, baseOption]);
 
   const bubbleOptions = useMemo(() => {
-    const data = processCreditGpaBubbleData(courseData);
+    if (!creditGpaBubbleData) return {};
+    
     return {
       ...baseOption,
       grid: { ...baseOption.grid, right: 65 }, // Increase right margin for axis name
@@ -122,7 +153,7 @@ function Charts({ courseData }) {
       visualMap: {
         show: false,
         min: 1,
-        max: Math.max(...data.map(d => d[2])),
+        max: creditGpaBubbleData.length > 0 ? Math.max(...creditGpaBubbleData.map(d => d[2])) : 1,
         dimension: 2, // Map size to the 3rd item in data array (count)
         inRange: {
           symbolSize: [10, 40] // Bubble size range
@@ -151,16 +182,17 @@ function Charts({ courseData }) {
         {
           name: '课程',
           type: 'scatter',
-          data: data,
+          data: creditGpaBubbleData,
         },
       ],
     };
-  }, [courseData, baseOption]);
+  }, [creditGpaBubbleData, baseOption]);
 
   const heatmapOptions = useMemo(() => {
-    // Filter out courses with credits greater than 4
-    const filteredCourses = courseData.filter(c => (parseFloat(c.course_weight) || 0) <= 4);
-    const data = processGpaHeatmapData(filteredCourses);
+    if (!gpaHeatmapData) return {};
+    
+    const maxHours = gpaHeatmapData.data.length > 0 ? Math.max(...gpaHeatmapData.data.map(item => item[2]), 5) : 5;
+
     return {
       ...baseOption,
       tooltip: {
@@ -170,12 +202,12 @@ function Charts({ courseData }) {
       grid: { height: '60%', top: '10%' },
       xAxis: {
         type: 'category',
-        data: data.semesters,
+        data: gpaHeatmapData.semesters,
         splitArea: { show: true }
       },
       yAxis: {
         type: 'category',
-        data: data.credits,
+        data: gpaHeatmapData.credits,
         splitArea: { show: true }
       },
       visualMap: {
@@ -191,14 +223,17 @@ function Charts({ courseData }) {
       series: [{
         name: '学期表现',
         type: 'heatmap',
-        data: data.data,
-        label: { show: true, formatter: (params) => params.value[2] },
+        data: gpaHeatmapData.data,
+        label: { 
+          show: true, 
+          formatter: (params) => params.value[2] 
+        },
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
         }
       }]
     };
-  }, [courseData, baseOption, theme.palette.text.primary]);
+  }, [gpaHeatmapData, baseOption, theme.palette.text.primary]);
 
   const chartList = [
     { title: '学期/累计GPA趋势图', options: gpaTrendOptions },
@@ -206,6 +241,13 @@ function Charts({ courseData }) {
     { title: '学分 vs 绩点气泡图', options: bubbleOptions },
     { title: '学期表现热力图', options: heatmapOptions },
   ];
+
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+      <Typography>图表加载中...</Typography>
+    </Box>
+  );
 
   return (
     <Box>
@@ -216,7 +258,9 @@ function Charts({ courseData }) {
               <Typography variant="h6" component="h3" gutterBottom>
                 {chart.title}
               </Typography>
-              <ReactECharts option={chart.options} style={{ height: 400 }} notMerge={true} lazyUpdate={true} theme={theme.palette.mode} />
+              <Suspense fallback={<LoadingFallback />}>
+                <ReactECharts option={chart.options} style={{ height: 400 }} notMerge={true} lazyUpdate={true} theme={theme.palette.mode} />
+              </Suspense>
             </CardContent>
           </Card>
         ))}

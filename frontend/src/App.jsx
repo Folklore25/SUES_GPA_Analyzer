@@ -1,9 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
+import { CircularProgress, Box } from '@mui/material';
+
+// Dynamic imports for components
+const Login = lazy(() => import('./components/Login'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
 
 const animationStyles = (
   <GlobalStyles styles={`
@@ -89,16 +92,25 @@ function App() {
     setThemeMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <CircularProgress />
+    </Box>
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {animationStyles}
       <main>
-        {isLoggedIn ? (
-          <Dashboard userCredentials={credentials} toggleTheme={toggleTheme} />
-        ) : (
-          <Login onLoginSuccess={handleLoginSuccess} />
-        )}
+        <Suspense fallback={<LoadingFallback />}>
+          {isLoggedIn ? (
+            <Dashboard userCredentials={credentials} toggleTheme={toggleTheme} />
+          ) : (
+            <Login onLoginSuccess={handleLoginSuccess} />
+          )}
+        </Suspense>
       </main>
     </ThemeProvider>
   );

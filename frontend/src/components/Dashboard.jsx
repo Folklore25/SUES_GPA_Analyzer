@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { parseCSV } from '../utils/csvParser';
 import { 
   Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, 
@@ -15,11 +15,13 @@ import InfoIcon from '@mui/icons-material/Info';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import EmailIcon from '@mui/icons-material/Email';
 import { calculateCurrentGPA } from '../utils/gpaCalculations';
-import CourseList from './CourseList';
-import Charts from './Charts';
-import RetakePlanner from './RetakePlanner';
-import DownloadProgress from './DownloadProgress';
-import PlanFAB from './PlanFAB'; // Import the new component
+
+// Dynamic imports for components
+const CourseList = lazy(() => import('./CourseList'));
+const Charts = lazy(() => import('./Charts'));
+const RetakePlanner = lazy(() => import('./RetakePlanner'));
+const DownloadProgress = lazy(() => import('./DownloadProgress'));
+const PlanFAB = lazy(() => import('./PlanFAB'));
 
 function StatCard({ title, value, icon }) {
   return (
@@ -162,6 +164,13 @@ function Dashboard({ userCredentials, toggleTheme }) {
     setActiveTab(2); // 2 is the index for RetakePlanner tab
   };
 
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <CircularProgress />
+    </Box>
+  );
+
   if (isInitialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -203,19 +212,33 @@ function Dashboard({ userCredentials, toggleTheme }) {
             </Tabs>
           </Box>
           <Box sx={{ p: 3 }}>
-            {!courseData && <Typography>暂无数据，请点击“获取/刷新数据”按钮。</Typography>}
-            {courseData && activeTab === 0 && <Charts courseData={courseData} />}
-            {courseData && activeTab === 1 && <CourseList courseData={courseData} retakePlan={retakePlan} onAddToPlan={handleAddToPlan} />}
-            {courseData && activeTab === 2 && <RetakePlanner courseData={courseData} retakePlan={retakePlan} onRemoveFromPlan={handleRemoveFromPlan} />}
+            {!courseData && <Typography>暂无数据，请点击"获取/刷新数据"按钮。</Typography>}
+            {courseData && activeTab === 0 && (
+              <Suspense fallback={<LoadingFallback />}>
+                <Charts courseData={courseData} />
+              </Suspense>
+            )}
+            {courseData && activeTab === 1 && (
+              <Suspense fallback={<LoadingFallback />}>
+                <CourseList courseData={courseData} retakePlan={retakePlan} onAddToPlan={handleAddToPlan} />
+              </Suspense>
+            )}
+            {courseData && activeTab === 2 && (
+              <Suspense fallback={<LoadingFallback />}>
+                <RetakePlanner courseData={courseData} retakePlan={retakePlan} onRemoveFromPlan={handleRemoveFromPlan} />
+              </Suspense>
+            )}
           </Box>
         </Paper>
       </Container>
 
-      <DownloadProgress 
-        open={isDownloading} 
-        message={downloadInfo.message}
-        progress={downloadInfo.progress} 
-      />
+      <Suspense fallback={null}>
+        <DownloadProgress 
+          open={isDownloading} 
+          message={downloadInfo.message}
+          progress={downloadInfo.progress} 
+        />
+      </Suspense>
 
       <Dialog
         open={isConfirmDialogOpen}
@@ -267,11 +290,13 @@ function Dashboard({ userCredentials, toggleTheme }) {
         </DialogActions>
       </Dialog>
 
-      <PlanFAB 
-        retakePlan={retakePlan} 
-        onRemoveFromPlan={handleRemoveFromPlan} 
-        onNavigateToPlanner={handleNavigateToPlanner} 
-      />
+      <Suspense fallback={null}>
+        <PlanFAB 
+          retakePlan={retakePlan} 
+          onRemoveFromPlan={handleRemoveFromPlan} 
+          onNavigateToPlanner={handleNavigateToPlanner} 
+        />
+      </Suspense>
     </Box>
   );
 }

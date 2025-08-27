@@ -2,8 +2,8 @@ const { app, BrowserWindow, ipcMain, Menu, dialog, utilityProcess } = require('e
 const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
-const IniHelper = require('./src/utils/iniHelper');
-const keytar = require('keytar');
+// IniHelper will be imported dynamically when needed
+// keytar will be imported dynamically when needed
 
 const SERVICE_NAME = 'SUES_GPA_Analyzer';
 
@@ -18,11 +18,12 @@ app.on('ready', () => {
 });
 
 // Function to get IniHelper with the correct path
-function getIniHelper() {
+async function getIniHelper() {
   // Ensure userDataPath is available
   if (!userDataPath) {
     userDataPath = app.getPath('userData');
   }
+  const IniHelper = require('./src/utils/iniHelper');
   return new IniHelper(path.join(userDataPath, 'user-info.ini'));
 }
 
@@ -71,15 +72,17 @@ async function migrateDataIfNeeded() {
     await fs.access(oldConfigPath); // Check if old config exists
     console.log('发现旧的配置文件，开始迁移...');
 
+    const IniHelper = require('./src/utils/iniHelper');
     const oldIniHelper = new IniHelper(oldConfigPath);
     const username = await oldIniHelper.get('user', 'username', '');
     const password = await oldIniHelper.get('user', 'password', ''); // Plain text password
     const urlValue = await oldIniHelper.get('user', 'url', '');
 
     if (username && password) {
-      const newIniHelper = getIniHelper();
+      const newIniHelper = await getIniHelper();
       await newIniHelper.set('user', 'username', username);
       await newIniHelper.set('user', 'url', urlValue);
+      const keytar = require('keytar');
       await keytar.setPassword(SERVICE_NAME, username, password);
       console.log(`用户 ${username} 的凭据已成功迁移。`);
     }
@@ -413,16 +416,18 @@ ipcMain.handle('load-course-data', async () => {
 });
 
 ipcMain.handle('save-user-info', async (event, userInfo) => {
-  const iniHelper = getIniHelper();
+  const iniHelper = await getIniHelper();
   try {
     if (Object.keys(userInfo).length === 0 || !userInfo.username) {
       const oldUsername = await iniHelper.get('user', 'username', '');
+      const keytar = require('keytar');
       if (oldUsername) await keytar.deletePassword(SERVICE_NAME, oldUsername);
       await iniHelper.delete('user', 'username');
       await iniHelper.delete('user', 'url');
     } else {
       await iniHelper.set('user', 'username', userInfo.username);
       await iniHelper.set('user', 'url', userInfo.url || '');
+      const keytar = require('keytar');
       await keytar.setPassword(SERVICE_NAME, userInfo.username, userInfo.password);
     }
     return { success: true };
@@ -432,10 +437,11 @@ ipcMain.handle('save-user-info', async (event, userInfo) => {
 });
 
 ipcMain.handle('load-user-info', async () => {
-  const iniHelper = getIniHelper();
+  const iniHelper = await getIniHelper();
   try {
     const username = await iniHelper.get('user', 'username', '');
     if (!username) return {};
+    const keytar = require('keytar');
     const password = await keytar.getPassword(SERVICE_NAME, username);
     const urlValue = await iniHelper.get('user', 'url', '');
     return { username, password: password || '', url: urlValue };
@@ -448,7 +454,7 @@ ipcMain.handle('load-user-info', async () => {
 
 
 ipcMain.handle('delete-user-data', async () => {
-  const iniHelper = getIniHelper();
+  const iniHelper = await getIniHelper();
   const username = await iniHelper.get('user', 'username', '');
   const userData = app.getPath('userData');
   const coursesPath = path.join(userData, 'courses.csv');
@@ -457,6 +463,7 @@ ipcMain.handle('delete-user-data', async () => {
   try {
     // Delete password from keychain
     if (username) {
+      const keytar = require('keytar');
       await keytar.deletePassword(SERVICE_NAME, username);
     }
     // Delete files
