@@ -4,6 +4,7 @@ import {
   TextField, Slider, ToggleButton, ToggleButtonGroup, TableSortLabel, IconButton
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { formatSemester } from '../utils/formatter';
 
 // Helper to sort arrays
 function stableSort(array, comparator) {
@@ -108,7 +109,7 @@ function CreditGroupedTable({ title, courses, order, orderBy, onRequestSort, ret
                       <TableCell>{course.course_weight}</TableCell>
                       <TableCell>{course.course_score}</TableCell>
                       <TableCell>{course.course_gpa}</TableCell>
-                      <TableCell>{course.course_semester}</TableCell>
+                      <TableCell>{formatSemester(course.course_semester)}</TableCell>
                       <TableCell>
                         <IconButton onClick={() => onAddToPlan(course)} disabled={isAdded} size="small">
                           <AddCircleOutlineIcon />

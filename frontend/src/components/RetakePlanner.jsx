@@ -34,9 +34,9 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
     return {
       tooltip: {
         position: 'top',
-        formatter: (params) => `第 ${params.value[0] + 1} 周<br/>课时: ${params.value[2]}h`
+        formatter: (params) => `第 ${params.value[0] + 1} 周<br/>总课时: ${params.value[2]}h`
       },
-      grid: { height: '60%', top: '10%', left: '10%', right: '5%' },
+            grid: { height: '60%', top: '10%', left: '10%', right: '5%' },
       xAxis: {
         type: 'category',
         data: plan.heatmap.weeks,
@@ -53,7 +53,7 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         calculable: true,
         orient: 'horizontal',
         left: 'center',
-        bottom: '5%',
+        bottom: '2%',
         inRange: { color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'] },
         textStyle: { color: theme.palette.text.primary }
       },
@@ -61,7 +61,11 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
         name: '周学习压力',
         type: 'heatmap',
         data: plan.heatmap.data,
-        label: { show: true, formatter: (params) => params.value[2] > 0 ? params.value[2] : '' },
+        label: { 
+          show: true, 
+          color: '#000',
+          formatter: (params) => params.value[2] > 0 ? params.value[2] : '' 
+        },
         emphasis: {
           itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
         }

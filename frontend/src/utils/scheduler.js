@@ -22,17 +22,17 @@ export function generateSchedule(courses, numSemesters, strategy) {
   }));
   coursesWithHours.sort((a, b) => b.hours - a.hours); // Sort by hours descending
 
-  let semesters = Array.from({ length: numSemesters }, () => ({ courses: [], hours: 0 }));
+  let semesters;
 
-  // --- Course Distribution Logic (same as before) ---
   switch (strategy) {
     case 'burnout':
+      // Ignores numSemesters, tries to use as few semesters as possible with a high load.
       semesters = [];
+      const burnoutThreshold = 192; // Approx. 12 hours/week for 16 weeks
       coursesWithHours.forEach(course => {
         let placed = false;
         for (const semester of semesters) {
-          const currentLoad = semester.hours / 60;
-          if (currentLoad < 2.5) {
+          if (semester.hours + course.hours <= burnoutThreshold) {
             semester.courses.push(course);
             semester.hours += course.hours;
             placed = true;
@@ -44,18 +44,22 @@ export function generateSchedule(courses, numSemesters, strategy) {
         }
       });
       break;
+
     case 'aggressive':
+      // Front-loads into the given numSemesters.
+      semesters = Array.from({ length: numSemesters }, () => ({ courses: [], hours: 0 }));
+      const aggressiveThreshold = 144; // Approx. 9 hours/week for 16 weeks
       coursesWithHours.forEach(course => {
         let placed = false;
         for (let i = 0; i < semesters.length; i++) {
-          const semesterLoad = semesters[i].hours / 60;
-          if (semesterLoad < 1.8) {
+          if (semesters[i].hours + course.hours <= aggressiveThreshold) {
             semesters[i].courses.push(course);
             semesters[i].hours += course.hours;
             placed = true;
             break;
           }
         }
+        // If it doesn't fit in any "roomy" semester, place it in the one with the fewest hours.
         if (!placed) {
           const targetSemester = semesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
           targetSemester.courses.push(course);
@@ -63,8 +67,11 @@ export function generateSchedule(courses, numSemesters, strategy) {
         }
       });
       break;
+
     case 'conservative':
     default:
+      // Distributes evenly across the given numSemesters.
+      semesters = Array.from({ length: numSemesters }, () => ({ courses: [], hours: 0 }));
       coursesWithHours.forEach(course => {
         const targetSemester = semesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
         targetSemester.courses.push(course);
@@ -84,17 +91,21 @@ export function generateSchedule(courses, numSemesters, strategy) {
 
   finalSchedule.forEach((semester, semesterIndex) => {
     semesterLabels.push(`第 ${semester.semester} 学期`);
-    const weeklyHours = Array(16).fill(0);
+    const weeklyData = Array.from({ length: 16 }, () => ({ hours: 0, courses: [] }));
+
     semester.courses.forEach(course => {
       const weeklyCourseHours = course.hours / course.duration;
       for (let week = 0; week < course.duration; week++) {
-        weeklyHours[week] += weeklyCourseHours;
+        weeklyData[week].hours += weeklyCourseHours;
+        weeklyData[week].courses.push(course.course_name);
       }
     });
 
-    weeklyHours.forEach((hours, weekIndex) => {
-      if (hours > 0) {
-        heatmapData.push([weekIndex, semesterIndex, parseFloat(hours.toFixed(1))]);
+    weeklyData.forEach((weekData, weekIndex) => {
+      if (weekData.hours > 0) {
+        // ECharts heatmap data format: [x, y, value]
+        const value = parseFloat(weekData.hours.toFixed(1));
+        heatmapData.push([weekIndex, semesterIndex, value]);
       }
     });
   });

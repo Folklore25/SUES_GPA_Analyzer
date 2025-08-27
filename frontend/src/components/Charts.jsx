@@ -158,7 +158,9 @@ function Charts({ courseData }) {
   }, [courseData, baseOption]);
 
   const heatmapOptions = useMemo(() => {
-    const data = processGpaHeatmapData(courseData);
+    // Filter out courses with credits greater than 4
+    const filteredCourses = courseData.filter(c => (parseFloat(c.course_weight) || 0) <= 4);
+    const data = processGpaHeatmapData(filteredCourses);
     return {
       ...baseOption,
       tooltip: {
