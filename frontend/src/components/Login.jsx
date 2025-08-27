@@ -7,7 +7,11 @@ import {
   Card, 
   CardContent, 
   Typography, 
-  Box 
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  LinearProgress
 } from '@mui/material';
 
 function Login({ onLoginSuccess }) {
@@ -16,6 +20,8 @@ function Login({ onLoginSuccess }) {
   const [url, setUrl] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
+  const [downloadInfo, setDownloadInfo] = useState({ message: '', progress: 0 });
 
   useEffect(() => {
     const loadInfo = async () => {
@@ -33,6 +39,26 @@ function Login({ onLoginSuccess }) {
       }
     };
     loadInfo();
+
+    // Set up listener for browser download progress
+    const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
+      console.log('Browser download progress update:', data);
+      setIsDownloadDialogOpen(true); // Show dialog when progress starts
+      setDownloadInfo({ message: data.message, progress: data.value });
+
+      // When download is complete, wait 2 seconds then close the dialog
+      if (data.value === 100) {
+        console.log('Download completed, closing dialog in 2 seconds...');
+        setTimeout(() => {
+          setIsDownloadDialogOpen(false);
+        }, 2000);
+      }
+    });
+
+    // Cleanup listener on component unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (event) => {
@@ -40,6 +66,15 @@ function Login({ onLoginSuccess }) {
     setError('');
 
     try {
+      // Check and download browser
+      const result = await window.electronAPI.checkAndDownloadBrowser();
+      
+      if (!result.success) {
+        setError(result.error || '浏览器检查/下载失败。');
+        return;
+      }
+      
+      // Save user info and proceed to dashboard
       if (rememberMe) {
         await window.electronAPI.saveUserInfo({ username, password, url });
       } else {
@@ -49,8 +84,8 @@ function Login({ onLoginSuccess }) {
       onLoginSuccess({ username, password, url });
 
     } catch (err) {
-      console.error('Failed to save user info:', err);
-      setError(err.message || '保存用户信息时发生错误。');
+      console.error('Login failed:', err);
+      setError(err.message || '登录时发生错误。');
     }
   };
 
@@ -128,13 +163,31 @@ function Login({ onLoginSuccess }) {
               type="submit" 
               variant="contained" 
               fullWidth 
+              disabled={isDownloadDialogOpen}
               sx={{ mt: 2 }}
             >
-              登录
+              {isDownloadDialogOpen ? '环境准备中...' : '登录'}
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      {/* Download Progress Dialog */}
+      <Dialog
+        open={isDownloadDialogOpen}
+        aria-labelledby="download-progress-title"
+      >
+        <DialogTitle id="download-progress-title">环境准备</DialogTitle>
+        <DialogContent sx={{ width: 400 }}>
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <Typography gutterBottom>{downloadInfo.message || '正在准备...'}</Typography>
+            <LinearProgress variant="determinate" value={downloadInfo.progress} />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Typography variant="body2" color="text.secondary">{downloadInfo.progress}%</Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

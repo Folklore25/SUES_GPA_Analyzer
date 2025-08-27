@@ -109,13 +109,44 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// Add a new IPC handler for checking and downloading browser
+ipcMain.handle('check-and-download-browser', async () => {
+  try {
+    console.log('Starting browser check/download process...');
+    const browsersPath = await ensureBrowserInstalled();
+    console.log('Browser check/download completed successfully');
+    return { success: true, browsersPath };
+  } catch (error) {
+    console.error('Browser check/download failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Add a new IPC handler for checking browser existence only
+ipcMain.handle('check-browser-existence', async () => {
+  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+  let browserInstalled = false;
+
+  try {
+    const browserDirs = await fs.readdir(browsersPath);
+    for (const dir of browserDirs) {
+      if (dir.startsWith('chromium')) {
+        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
+        await fs.access(exePath); // Check for executable existence
+        browserInstalled = true;
+        break;
+      }
+    }
+  } catch (error) {
+    browserInstalled = false; // Directory or executable not found
+  }
+
+  return { installed: browserInstalled };
+});
+
 // --- Browser Installation ---
 async function ensureBrowserInstalled() {
-  // When packaged in asar, we need to ensure Playwright can find its browsers
-  const isProduction = app.isPackaged;
-  const browsersPath = isProduction
-    ? path.join(app.getPath('userData'), 'pw-browsers')
-    : path.join(app.getPath('userData'), 'pw-browsers');
+  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
   let browserInstalled = false;
 
   try {
@@ -138,7 +169,9 @@ async function ensureBrowserInstalled() {
   }
 
   // Browser not found, proceed with installation
+  console.log('Browser not found, starting download process...');
   return new Promise((resolve, reject) => {
+    console.log('Sending initial download progress message...');
     // Check if mainWindow exists before sending message
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
@@ -149,6 +182,10 @@ async function ensureBrowserInstalled() {
     const playwrightCliPath = isProduction
       ? path.join(app.getAppPath(), 'node_modules', 'playwright', 'cli.js')
       : path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
+
+    console.log('Playwright CLI path:', playwrightCliPath);
+    console.log('Browsers path:', browsersPath);
+    console.log('Working directory:', isProduction ? app.getAppPath() : app.getAppPath());
 
     const downloaderProcess = utilityProcess.fork(
       playwrightCliPath,
@@ -165,9 +202,11 @@ async function ensureBrowserInstalled() {
       }
     );
 
+    console.log('Downloader process started with PID:', downloaderProcess.pid);
+
     downloaderProcess.stdout.on('data', (data) => {
       const output = data.toString();
-      console.log(`Playwright Installer: ${output}`); // Log for debugging
+      console.log(`Playwright Installer stdout: ${output}`); // Log for debugging
 
       // Regex to parse the percentage from Playwright's output
       const progressRegex = /(\d+)\%\s+of/;
@@ -181,6 +220,7 @@ async function ensureBrowserInstalled() {
         } else if (output.includes('FFMPEG')) {
           message = '正在下载 FFMPEG (视频解码器)...';
         }
+        console.log(`Download progress: ${progressValue}% - ${message}`);
         // Check if mainWindow exists before sending message
         if (mainWindow && mainWindow.webContents) {
           mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
@@ -189,10 +229,25 @@ async function ensureBrowserInstalled() {
     });
 
     downloaderProcess.stderr.on('data', (data) => {
-      console.error(`Playwright Installer Error: ${data.toString()}`);
+      const output = data.toString();
+      console.error(`Playwright Installer stderr: ${output}`);
+    });
+
+    downloaderProcess.on('spawn', () => {
+      console.log('Downloader process spawned successfully');
+    });
+
+    downloaderProcess.on('error', (err) => {
+      console.error('Failed to start browser downloader process:', err);
+      // Check if mainWindow exists before sending message
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载启动失败', value: 0 });
+      }
+      reject(err);
     });
 
     downloaderProcess.on('exit', (code) => {
+      console.log(`Downloader process exited with code: ${code}`);
       // Check if mainWindow exists before sending message
       if (mainWindow && mainWindow.webContents) {
         if (code === 0) {
@@ -215,15 +270,6 @@ async function ensureBrowserInstalled() {
         }
       }
     });
-
-    downloaderProcess.on('error', (err) => {
-      console.error('Failed to start browser downloader process.', err);
-      // Check if mainWindow exists before sending message
-      if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载启动失败', value: 0 });
-      }
-      reject(err);
-    });
   });
 }
 
@@ -232,7 +278,27 @@ async function ensureBrowserInstalled() {
 
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
   try {
-    const browsersPath = await ensureBrowserInstalled();
+    // Instead of downloading browser here, just check if it exists
+    const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+    let browserInstalled = false;
+
+    try {
+      const browserDirs = await fs.readdir(browsersPath);
+      for (const dir of browserDirs) {
+        if (dir.startsWith('chromium')) {
+          const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
+          await fs.access(exePath); // Check for executable existence
+          browserInstalled = true;
+          break;
+        }
+      }
+    } catch (error) {
+      browserInstalled = false; // Directory or executable not found
+    }
+
+    if (!browserInstalled) {
+      throw new Error('浏览器未安装，请重新登录以下载浏览器。');
+    }
 
     return new Promise((resolve, reject) => {
       let settled = false;

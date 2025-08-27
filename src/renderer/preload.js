@@ -8,16 +8,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveUserInfo: (userInfo) => ipcRenderer.invoke('save-user-info', userInfo),
   loadUserInfo: () => ipcRenderer.invoke('load-user-info'),
   deleteUserData: () => ipcRenderer.invoke('delete-user-data'),
+  checkAndDownloadBrowser: () => ipcRenderer.invoke('check-and-download-browser'),
+  checkBrowserExistence: () => ipcRenderer.invoke('check-browser-existence'),
 
   onBrowserDownloadProgress: (callback) => {
     const subscription = (_event, data) => callback(data);
     ipcRenderer.on('browser-download-progress', subscription);
     return () => ipcRenderer.removeListener('browser-download-progress', subscription);
-  },
-  
-  onCrawlerError: (callback) => {
-    const subscription = (_event, data) => callback(data);
-    ipcRenderer.on('crawler-error', subscription);
-    return () => ipcRenderer.removeListener('crawler-error', subscription);
   },
 });

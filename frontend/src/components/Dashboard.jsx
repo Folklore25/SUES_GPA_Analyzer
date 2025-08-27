@@ -88,25 +88,16 @@ function Dashboard({ userCredentials, toggleTheme }) {
 
       // When download is complete, wait 2 seconds then close the dialog
       if (data.value === 100) {
+        console.log('Download completed, closing dialog in 2 seconds...');
         setTimeout(() => {
           setIsDownloading(false);
         }, 2000);
       }
     });
 
-    // Set up listener for crawler errors
-    const unsubscribeError = window.electronAPI.onCrawlerError((data) => {
-      console.error('Crawler error:', data);
-      setError(`爬虫错误: ${data}`);
-      // Close download dialog if it's open
-      setIsDownloading(false);
-      setIsLoading(false);
-    });
-
-    // Cleanup listeners on component unmount
+    // Cleanup listener on component unmount
     return () => {
       if (unsubscribeProgress) unsubscribeProgress();
-      if (unsubscribeError) unsubscribeError();
     };
 
   }, []);
@@ -115,10 +106,14 @@ function Dashboard({ userCredentials, toggleTheme }) {
     setIsLoading(true);
     setError('');
     setDownloadInfo({});
-    // Let the listener control the download dialog visibility
-    // setIsDownloading(false); 
-
+    
     try {
+      // Check if browser is installed before starting crawler
+      const browserCheck = await window.electronAPI.checkBrowserExistence();
+      if (!browserCheck.installed) {
+        throw new Error('浏览器未安装，请重新登录以下载浏览器。');
+      }
+      
       const result = await window.electronAPI.startCrawler(userCredentials);
       if (result.success) {
         const csvData = await window.electronAPI.loadCourseData();
