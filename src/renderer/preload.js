@@ -14,4 +14,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('browser-download-progress', subscription);
     return () => ipcRenderer.removeListener('browser-download-progress', subscription);
   },
+  
+  onCrawlerError: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on('crawler-error', subscription);
+    return () => ipcRenderer.removeListener('crawler-error', subscription);
+  },
 });

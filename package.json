@@ -36,6 +36,11 @@
       "frontend/dist/**/*"
     ],
     "asar": true,
+    "asarUnpack": [
+      "src/crawler/crawler.js",
+      "src/crawler/config.json",
+      "node_modules/playwright/**/*"
+    ],
     "compression": "maximum",
     "win": {
       "target": [

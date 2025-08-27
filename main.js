@@ -111,7 +111,11 @@ app.on('window-all-closed', function () {
 
 // --- Browser Installation ---
 async function ensureBrowserInstalled() {
-  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+  // When packaged in asar, we need to ensure Playwright can find its browsers
+  const isProduction = app.isPackaged;
+  const browsersPath = isProduction
+    ? path.join(app.getPath('userData'), 'pw-browsers')
+    : path.join(app.getPath('userData'), 'pw-browsers');
   let browserInstalled = false;
 
   try {
@@ -135,16 +139,27 @@ async function ensureBrowserInstalled() {
 
   // Browser not found, proceed with installation
   return new Promise((resolve, reject) => {
-    mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
+    // Check if mainWindow exists before sending message
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
+    }
 
-    const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
+    // When packaged in asar, we need to adjust the path to playwright CLI
+    const isProduction = app.isPackaged;
+    const playwrightCliPath = isProduction
+      ? path.join(app.getAppPath(), 'node_modules', 'playwright', 'cli.js')
+      : path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
 
     const downloaderProcess = utilityProcess.fork(
       playwrightCliPath,
       ['install', 'chromium'],
       {
-        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
-        cwd: app.getAppPath(),
+        env: { 
+          ...process.env, 
+          PLAYWRIGHT_BROWSERS_PATH: browsersPath,
+          NODE_ENV: app.isPackaged ? 'production' : 'development'
+        },
+        cwd: isProduction ? app.getAppPath() : app.getAppPath(),
         serviceName: 'playwright-browser-installer',
         stdio: 'pipe' // Explicitly set stdio to ensure streams are created
       }
@@ -166,7 +181,10 @@ async function ensureBrowserInstalled() {
         } else if (output.includes('FFMPEG')) {
           message = '正在下载 FFMPEG (视频解码器)...';
         }
-        mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
+        // Check if mainWindow exists before sending message
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
+        }
       }
     });
 
@@ -175,19 +193,35 @@ async function ensureBrowserInstalled() {
     });
 
     downloaderProcess.on('exit', (code) => {
-      if (code === 0) {
-        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
-        console.log('Playwright browser downloaded successfully.');
-        resolve(browsersPath);
+      // Check if mainWindow exists before sending message
+      if (mainWindow && mainWindow.webContents) {
+        if (code === 0) {
+          mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
+          console.log('Playwright browser downloaded successfully.');
+          resolve(browsersPath);
+        } else {
+          const errorMessage = `浏览器下载失败，退出码: ${code}`;
+          mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
+          reject(new Error(errorMessage));
+        }
       } else {
-        const errorMessage = `浏览器下载失败，退出码: ${code}`;
-        mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
-        reject(new Error(errorMessage));
+        // If mainWindow is not available, just resolve/reject without sending message
+        if (code === 0) {
+          console.log('Playwright browser downloaded successfully.');
+          resolve(browsersPath);
+        } else {
+          const errorMessage = `浏览器下载失败，退出码: ${code}`;
+          reject(new Error(errorMessage));
+        }
       }
     });
 
     downloaderProcess.on('error', (err) => {
       console.error('Failed to start browser downloader process.', err);
+      // Check if mainWindow exists before sending message
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载启动失败', value: 0 });
+      }
       reject(err);
     });
   });
@@ -203,7 +237,11 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
     return new Promise((resolve, reject) => {
       let settled = false;
 
-      const crawlerPath = path.join(__dirname, 'src', 'crawler', 'crawler.js');
+      // When packaged in asar, we need to extract the path correctly
+      const isProduction = app.isPackaged;
+      const crawlerPath = isProduction 
+        ? path.join(app.getAppPath(), 'src', 'crawler', 'crawler.js')
+        : path.join(__dirname, 'src', 'crawler', 'crawler.js');
 
       // Create a message channel for communication
       const { MessageChannelMain } = require('electron');
@@ -225,9 +263,25 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       port1.start(); // Start listening for messages
 
       const crawlerProcess = utilityProcess.fork(crawlerPath, [], {
-        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+        env: { 
+          ...process.env, 
+          PLAYWRIGHT_BROWSERS_PATH: browsersPath,
+          NODE_ENV: app.isPackaged ? 'production' : 'development'
+        },
         serviceName: 'sues-gpa-crawler',
         stdio: 'pipe' // Ensure stdio streams are piped
+      });
+
+      // Add error logging for debugging
+      crawlerProcess.on('error', (error) => {
+        console.error('爬虫进程启动失败:', error);
+        if (settled) return;
+        settled = true;
+        reject(new Error(`爬虫进程启动失败: ${error.message}`));
+      });
+
+      crawlerProcess.on('spawn', () => {
+        console.log('爬虫进程已成功启动');
       });
 
       crawlerProcess.on('error', (error) => {
@@ -256,8 +310,24 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         data: { loginInfo: loginInfo, userDataPath: app.getPath('userData') }
       });
 
-      crawlerProcess.stdout.on('data', (data) => console.log(`Crawler stdout: ${data}`));
-      crawlerProcess.stderr.on('data', (data) => console.error(`Crawler stderr: ${data}`));
+      // Capture stdout and stderr for debugging
+      crawlerProcess.stdout.on('data', (data) => {
+        const output = data.toString();
+        console.log(`Crawler stdout: ${output}`);
+        // If we get an error message, we might want to report it
+        if (output.toLowerCase().includes('error') || output.toLowerCase().includes('exception')) {
+          console.error('Crawler error in stdout:', output);
+        }
+      });
+      
+      crawlerProcess.stderr.on('data', (data) => {
+        const output = data.toString();
+        console.error(`Crawler stderr: ${output}`);
+        // Forward error messages to the renderer if needed
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('crawler-error', output);
+        }
+      });
     });
   } catch (error) {
     console.error("爬虫启动流程失败:", error);

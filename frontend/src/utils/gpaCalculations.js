@@ -159,14 +159,26 @@ export function processCreditGpaBubbleData(data) {
  * X-axis: Semester, Y-axis: Credits, Color: Average GPA
  */
 export function processGpaHeatmapData(data) {
+  // Filter out courses with non-numeric semesters
+  const validData = data.filter(course => {
+    const semester = course.course_semester.split(',')[0].trim();
+    const credits = parseFloat(course.course_weight);
+    const gpa = parseFloat(course.course_gpa);
+    
+    // Check if semester is numeric
+    const semesterNum = parseInt(semester, 10);
+    
+    return semester && !isNaN(semesterNum) && !isNaN(credits) && !isNaN(gpa);
+  });
+
   const heatmapData = new Map(); // Key: "semester-credit", Value: { totalGpa: 0, count: 0 }
 
-  data.forEach(course => {
+  validData.forEach(course => {
     const semester = course.course_semester.split(',')[0].trim(); // Use first semester if multiple
     const credits = parseFloat(course.course_weight);
     const gpa = parseFloat(course.course_gpa);
 
-    if (!semester || isNaN(credits) || isNaN(gpa)) return;
+    if (!semester) return;
 
     const key = `${semester}-${credits}`;
     if (heatmapData.has(key)) {
@@ -178,8 +190,13 @@ export function processGpaHeatmapData(data) {
     }
   });
 
-  const semesters = [...new Set(data.map(c => c.course_semester.split(',')[0].trim()))].sort();
-  const creditValues = [...new Set(data.map(c => parseFloat(c.course_weight)))].filter(c => !isNaN(c)).sort((a, b) => a - b);
+  const semesters = [...new Set(validData.map(c => c.course_semester.split(',')[0].trim()))]
+    .filter(s => !isNaN(parseInt(s, 10))) // Filter out non-numeric semesters
+    .sort((a, b) => parseInt(a, 10) - parseInt(b, 10)); // Sort numerically
+  
+  const creditValues = [...new Set(validData.map(c => parseFloat(c.course_weight)))]
+    .filter(c => !isNaN(c))
+    .sort((a, b) => a - b);
 
   const echartsData = [];
   semesters.forEach((semester, sIndex) => {

@@ -2,7 +2,32 @@ const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
 const { JSDOM } = require('jsdom');
-const config = require('./config.json');
+
+// Log the current working directory and filename for debugging
+console.log('爬虫脚本启动');
+console.log('当前工作目录:', process.cwd());
+console.log('脚本文件路径:', __filename);
+console.log('脚本目录路径:', __dirname);
+
+// Handle config path differently when packaged in asar
+const isProduction = process.env.NODE_ENV === 'production';
+console.log('运行环境:', isProduction ? 'production' : 'development');
+
+const configPath = isProduction
+  ? path.join(path.dirname(__filename), 'config.json')
+  : './config.json';
+  
+console.log('配置文件路径:', configPath);
+
+// Check if config file exists
+try {
+  const configStats = fs.statSync(configPath);
+  console.log('配置文件存在，大小:', configStats.size, '字节');
+} catch (err) {
+  console.error('配置文件不存在或无法访问:', err.message);
+}
+
+const config = require(configPath);
 
 let parentPort = null;
 
@@ -128,6 +153,15 @@ class CoursesScraper {
   async setupBrowser() {
     try {
       sendMessage('progress', { message: '正在启动浏览器...' });
+      console.log('浏览器配置:', config.browser);
+      
+      // 确保PLAYWRIGHT_BROWSERS_PATH环境变量已设置
+      if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+        console.log('Playwright浏览器路径:', process.env.PLAYWRIGHT_BROWSERS_PATH);
+      } else {
+        console.warn('PLAYWRIGHT_BROWSERS_PATH环境变量未设置');
+      }
+      
       this.browser = await chromium.launch({
         headless: config.browser.headless,
         args: config.browser.args
@@ -299,8 +333,10 @@ process.parentPort.on('message', async (e) => {
   if (message.type === 'init') {
     // Store the port for communication
     parentPort = e.ports[0];
+    console.log('爬虫进程已初始化');
   } else if (message.type === 'start') {
     try {
+      console.log('开始执行爬虫任务');
       // Store the userDataPath and get loginInfo from the new data structure
       userDataPath = message.data.userDataPath;
       const scraper = new CoursesScraper(message.data.loginInfo);
@@ -309,6 +345,8 @@ process.parentPort.on('message', async (e) => {
       const coursesData = await scraper.scrapeCourses();
       await scraper.close();
       
+      console.log(`爬虫任务完成，共获取到 ${coursesData.length} 条数据`);
+      
       // 发送完成消息
       sendMessage('complete', { 
         success: true, 
@@ -316,6 +354,7 @@ process.parentPort.on('message', async (e) => {
         message: '数据获取完成' 
       });
     } catch (error) {
+      console.error('爬虫执行过程中发生错误:', error);
       // 发送错误消息
       sendMessage('error', { 
         success: false, 
@@ -330,7 +369,7 @@ process.parentPort.start();
 
 // 错误处理
 process.on('uncaughtException', (error) => {
-  console.error('未捕获的异常:', error);
+  console.error('爬虫进程中未捕获的异常:', error);
   sendMessage('error', { 
     success: false, 
     message: `未捕获的异常: ${error.message}` 
@@ -338,7 +377,7 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('未处理的Promise拒绝:', reason);
+  console.error('爬虫进程中未处理的Promise拒绝:', reason);
   sendMessage('error', {
     success: false,
     message: `未处理的Promise拒绝: ${reason}`

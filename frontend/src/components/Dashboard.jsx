@@ -79,7 +79,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
     initialLoad();
 
     // Set up listener for browser download progress
-    const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
+    const unsubscribeProgress = window.electronAPI.onBrowserDownloadProgress((data) => {
       console.log('Browser download progress update:', data);
       // As soon as download starts, take over the loading state from the button
       setIsLoading(false);
@@ -94,9 +94,19 @@ function Dashboard({ userCredentials, toggleTheme }) {
       }
     });
 
-    // Cleanup listener on component unmount
+    // Set up listener for crawler errors
+    const unsubscribeError = window.electronAPI.onCrawlerError((data) => {
+      console.error('Crawler error:', data);
+      setError(`爬虫错误: ${data}`);
+      // Close download dialog if it's open
+      setIsDownloading(false);
+      setIsLoading(false);
+    });
+
+    // Cleanup listeners on component unmount
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeProgress) unsubscribeProgress();
+      if (unsubscribeError) unsubscribeError();
     };
 
   }, []);
