@@ -23,19 +23,18 @@ const getIpsRating = (ips) => {
 const HeatBar = ({ label, value, maxValue, unit }) => {
   const theme = useTheme();
 
+  const getBarColor = () => {
+    const percentage = (value / maxValue) * 100;
+    if (percentage > 85) return theme.palette.error.main;
+    if (percentage > 70) return theme.palette.warning.main;
+    return theme.palette.success.main;
+  };
+
   const options = useMemo(() => ({
     grid: { left: 1, top: 5, right: 1, bottom: 0 },
     xAxis: { show: false, type: 'value', max: maxValue },
     yAxis: { show: false, type: 'category' },
     tooltip: { show: false },
-    visualMap: {
-      show: false,
-      min: 0,
-      max: maxValue,
-      inRange: {
-        color: [theme.palette.success.main, theme.palette.warning.main, theme.palette.error.main]
-      }
-    },
     series: [{
       type: 'bar',
       data: [value],
@@ -45,6 +44,7 @@ const HeatBar = ({ label, value, maxValue, unit }) => {
         color: theme.palette.action.hover
       },
       itemStyle: {
+        color: getBarColor(),
         borderRadius: 5
       }
     }]
@@ -340,7 +340,7 @@ function RetakePlanner({ courseData }) {
                   <HeatBar label="重修压力" value={analysis.totalStress} maxValue={20} unit="学分" />
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="h6" align="center">
-                    预估新GPA: {analysis.projectedGpa.toFixed(3)}
+                    预估新GPA: {analysis.projectedGpa.toFixed(2)}
                   </Typography>
                 </Box>
               ) : (
