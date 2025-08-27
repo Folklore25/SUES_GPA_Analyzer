@@ -15,6 +15,7 @@ import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
 import RetakePlanner from './RetakePlanner';
+import DownloadProgress from './DownloadProgress'; // Import the new component
 
 function StatCard({ title, value, icon }) {
   return (
@@ -39,6 +40,10 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const theme = useTheme();
 
+  // State for download progress dialog
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadInfo, setDownloadInfo] = useState({});
+
   useEffect(() => {
     const initialLoad = async () => {
       try {
@@ -54,19 +59,51 @@ function Dashboard({ userCredentials, toggleTheme }) {
       }
     };
     initialLoad();
+
+    // Set up listener for browser download progress
+    const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
+      console.log('Browser download progress update:', data);
+      // As soon as download starts, take over the loading state from the button
+      setIsLoading(false);
+      setIsDownloading(true);
+      setDownloadInfo({ message: data.message, progress: data.value });
+
+      // When download is complete, wait 2 seconds then close the dialog
+      if (data.value === 100) {
+        setTimeout(() => {
+          setIsDownloading(false);
+        }, 2000);
+      }
+    });
+
+    // Cleanup listener on component unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+
   }, []);
 
   const handleGetData = async () => {
     setIsLoading(true);
     setError('');
+    setDownloadInfo({});
+    // Let the listener control the download dialog visibility
+    // setIsDownloading(false); 
+
     try {
-      await window.electronAPI.startCrawler(userCredentials);
-      const csvData = await window.electronAPI.loadCourseData();
-      const jsonData = parseCSV(csvData);
-      setCourseData(jsonData);
+      const result = await window.electronAPI.startCrawler(userCredentials);
+      if (result.success) {
+        const csvData = await window.electronAPI.loadCourseData();
+        const jsonData = parseCSV(csvData);
+        setCourseData(jsonData);
+      } else {
+        throw new Error(result.message || '爬虫未能成功完成');
+      }
     } catch (err) {
       console.error("Failed to get course data:", err);
       setError(err.message || '获取或解析课程数据时出错。');
+      // If an error occurs, ensure the download dialog is closed
+      setIsDownloading(false);
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +150,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
         <Typography variant="h6" sx={{ ml: 2 }}>仪表盘</Typography>
         <Box>
           <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
-          <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
+          <Button onClick={handleGetData} disabled={isLoading || isDownloading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">{theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}</IconButton>
         </Box>
       </Paper>
@@ -146,7 +183,12 @@ function Dashboard({ userCredentials, toggleTheme }) {
         </Paper>
       </Container>
 
-      {/* Confirmation Dialog */}
+      <DownloadProgress 
+        open={isDownloading} 
+        message={downloadInfo.message}
+        progress={downloadInfo.progress} 
+      />
+
       <Dialog
         open={isConfirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}

@@ -6,7 +6,9 @@ const config = require('./config.json');
 
 // 发送消息给父进程
 function sendMessage(type, data) {
-  if (process.send) {
+  // Progress reporting is disabled as per user request.
+  // Only send final 'complete' or 'error' messages.
+  if (process.send && (type === 'complete' || type === 'error')) {
     process.send({ type, data });
   }
 }

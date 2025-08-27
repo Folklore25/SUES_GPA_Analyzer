@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
-const { fork } = require('child_process');
+const { fork, spawn } = require('child_process');
 const IniHelper = require('./src/utils/iniHelper');
 const keytar = require('keytar');
 
@@ -110,34 +110,148 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// --- Browser Installation ---
+async function ensureBrowserInstalled() {
+  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+  let browserInstalled = false;
+
+  try {
+    const browserDirs = await fs.readdir(browsersPath);
+    for (const dir of browserDirs) {
+      if (dir.startsWith('chromium')) {
+        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
+        await fs.access(exePath); // Check for executable existence
+        browserInstalled = true;
+        break;
+      }
+    }
+  } catch (error) {
+    browserInstalled = false; // Directory or executable not found
+  }
+
+  if (browserInstalled) {
+    console.log('Playwright browser is already installed.');
+    return browsersPath;
+  }
+
+  // Browser not found, proceed with installation
+  return new Promise((resolve, reject) => {
+    mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
+
+    const playwrightCliPath = path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked'), 'node_modules', 'playwright', 'cli.js');
+
+    const downloaderProcess = spawn(
+      process.execPath,
+      [playwrightCliPath, 'install', 'chromium'],
+      {
+        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+        cwd: app.getAppPath(),
+      }
+    );
+
+    downloaderProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      console.log(`Playwright Installer: ${output}`); // Log for debugging
+
+      // Regex to parse the percentage from Playwright's output
+      const progressRegex = /(\d+)\%\s+of/;
+      const match = output.match(progressRegex);
+
+      if (match && match[1]) {
+        const progressValue = parseInt(match[1], 10);
+        let message = '正在下载依赖文件...';
+        if (output.includes('Chromium')) {
+          message = '正在下载 Chromium 浏览器...';
+        } else if (output.includes('FFMPEG')) {
+          message = '正在下载 FFMPEG (视频解码器)...';
+        }
+        mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
+      }
+    });
+
+    downloaderProcess.stderr.on('data', (data) => {
+      console.error(`Playwright Installer Error: ${data.toString()}`);
+    });
+
+    downloaderProcess.on('exit', (code) => {
+      if (code === 0) {
+        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
+        console.log('Playwright browser downloaded successfully.');
+        resolve(browsersPath);
+      } else {
+        const errorMessage = `浏览器下载失败，退出码: ${code}`;
+        mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
+        reject(new Error(errorMessage));
+      }
+    });
+
+    downloaderProcess.on('error', (err) => {
+      console.error('Failed to start browser downloader process.', err);
+      reject(err);
+    });
+  });
+}
+
+
 // --- IPC Handlers ---
 
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
-  return new Promise((resolve, reject) => {
-    const crawlerProcess = fork(path.join(__dirname, 'src/crawler/crawler.js'), [], {
-      env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '0' },
-      silent: true 
-    });
-    
-    crawlerProcess.send({
-      type: 'start', 
-      data: { loginInfo: loginInfo, userDataPath: app.getPath('userData') }
-    });
-    
-    crawlerProcess.on('message', (message) => {
-      if (message.type === 'progress') {
-        mainWindow.webContents.send('crawler-progress', message.data);
-      } else if (message.type === 'complete') {
-        resolve(message.data);
-      } else if (message.type === 'error') {
-        reject(new Error(message.data));
+  try {
+    const browsersPath = await ensureBrowserInstalled();
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+
+      // Adjust path for packaged app
+      let crawlerPath = path.join(__dirname, 'src/crawler/crawler.js');
+      if (app.isPackaged) {
+        crawlerPath = crawlerPath.replace('app.asar', 'app.asar.unpacked');
       }
+
+      const crawlerProcess = fork(crawlerPath, [], {
+        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+        silent: true
+      });
+
+      crawlerProcess.on('message', (message) => {
+        if (settled) return;
+        if (message.type === 'complete') {
+          settled = true;
+          resolve(message.data);
+        } else if (message.type === 'error') {
+          settled = true;
+          reject(new Error(message.data.message || JSON.stringify(message.data)));
+        }
+      });
+
+      crawlerProcess.on('error', (error) => {
+        if (settled) return;
+        settled = true;
+        reject(error);
+      });
+
+      crawlerProcess.on('exit', (code) => {
+        if (settled) return;
+        settled = true;
+        if (code !== 0) {
+          reject(new Error(`爬虫进程意外退出，退出码: ${code}`));
+        } else {
+          reject(new Error('爬虫进程已结束，但未返回有效数据。'));
+        }
+      });
+
+      crawlerProcess.send({
+        type: 'start',
+        data: { loginInfo: loginInfo, userDataPath: app.getPath('userData') }
+      });
+
+      crawlerProcess.stdout.on('data', (data) => console.log(`Crawler stdout: ${data}`));
+      crawlerProcess.stderr.on('data', (data) => console.error(`Crawler stderr: ${data}`));
     });
-    
-    crawlerProcess.on('error', (error) => reject(error));
-    crawlerProcess.stdout.on('data', (data) => console.log(`Crawler stdout: ${data}`));
-    crawlerProcess.stderr.on('data', (data) => console.error(`Crawler stderr: ${data}`));
-  });
+  } catch (error) {
+    console.error("爬虫启动流程失败:", error);
+    throw new Error('爬虫启动流程失败: ' + error.message);
+  }
 });
 
 ipcMain.handle('load-course-data', async () => {
