@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { parseCSV } from '../utils/csvParser';
-import { Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, Card, CardContent, Tabs, Tab } from '@mui/material';
+import { 
+  Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, 
+  Card, CardContent, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle 
+} from '@mui/material';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme } from '@mui/material/styles';
@@ -33,6 +36,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const theme = useTheme();
 
   useEffect(() => {
@@ -68,10 +72,21 @@ function Dashboard({ userCredentials, toggleTheme }) {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    setConfirmDialogOpen(false);
+    try {
+      await window.electronAPI.deleteUserData();
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to delete data:", err);
+      setError(err.message || '删除数据时出错。');
+    }
+  };
+
   const summaryStats = useMemo(() => {
     if (!courseData) return null;
     const totalCredits = courseData
-      .filter(c => c.pass === 'passed' || c.pass === 'failed') 
+      .filter(c => c.pass === 'passed' || c.pass === 'failed')
       .reduce((sum, course) => sum + (parseFloat(course.course_weight) || 0), 0);
     const passedCount = courseData.filter(c => c.pass === 'passed').length;
     const failedCount = courseData.filter(c => c.pass === 'failed').length;
@@ -95,8 +110,9 @@ function Dashboard({ userCredentials, toggleTheme }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
       <Paper elevation={1} square sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="h6" sx={{ ml: 2 }}>今天你学习了吗？</Typography>
+        <Typography variant="h6" sx={{ ml: 2 }}>仪表盘</Typography>
         <Box>
+          <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
           <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">{theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}</IconButton>
         </Box>
@@ -129,6 +145,23 @@ function Dashboard({ userCredentials, toggleTheme }) {
           </Box>
         </Paper>
       </Container>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={isConfirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+      >
+        <DialogTitle>确认删除数据</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            您确定要删除所有本地数据吗？此操作将清除已保存的用户信息和课程数据，且不可逆。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmDelete} color="error">删除</Button>
+          <Button onClick={() => setConfirmDialogOpen(false)} autoFocus>取消</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

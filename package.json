@@ -5,10 +5,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
-    "build": "npm run build:frontend && electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ../outputs  --icon=logo.ico --overwrite",
+    "rebuild": "electron-rebuild -f -w keytar",
+    "build:frontend": "vite build frontend --config vite.config.js",
+    "build": "npm run rebuild && npm run build:frontend && electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ../outputs  --icon=logo.ico --overwrite",
     "test": "vitest",
     "dev:frontend": "vite frontend --config vite.config.js",
-    "build:frontend": "vite build frontend --config vite.config.js",
     "dev:electron": "electron .",
     "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:electron\"",
     "package": "electron-forge package",
@@ -21,10 +22,11 @@
     "crawler"
   ],
   "author": "Folklore25",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "build": {
     "appId": "com.sues.gpa-analyzer",
     "productName": "SUES GPA Analyzer",
+    "icon": "logo.ico",
     "directories": {
       "output": "dist"
     },
@@ -32,6 +34,9 @@
       "main.js",
       "src/**/*",
       "frontend/dist/**/*"
+    ],
+    "asarUnpack": [
+      "src/crawler/crawler.js"
     ],
     "asar": true,
     "compression": "maximum",
@@ -61,6 +66,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
     "@electron-forge/plugin-fuses": "^7.8.3",
     "@electron/fuses": "^1.8.0",
+    "@electron/rebuild": "^4.0.1",
     "@vitejs/plugin-react": "^5.0.1",
     "concurrently": "^9.2.1",
     "electron": "^37.3.0",

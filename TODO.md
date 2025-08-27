@@ -4,6 +4,20 @@ This file tracks the major tasks for improving the SUES GPA Analyzer.
 
 ---
 
+## Future Improvement: Playwright Browser Handling
+
+**Goal:** Improve application startup reliability and reduce initial package size.
+
+**Problem:** The packaged application currently requires Playwright's browsers to be manually bundled, which is complex, error-prone, and significantly increases the application's file size.
+
+**Proposed Solution (Playwright Recommended):**
+- [ ] Modify `src/crawler/crawler.js` to programmatically check for the existence of the required browser executable upon startup.
+- [ ] If the browser is not found, automatically download it using Playwright's built-in API.
+- [ ] Display the download progress to the user in the main window to improve user experience.
+- [ ] This approach eliminates the need to bundle large browser files, reduces application size, and ensures cross-platform compatibility.
+
+---
+
 ## UI/UX Improvement Plan (Refactoring with Material Design)
 
 This plan outlines the migration of the UI to React with the MUI component library to achieve a modern Material Design look and feel.
