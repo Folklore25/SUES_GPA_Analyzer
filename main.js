@@ -113,178 +113,26 @@ app.on('window-all-closed', function () {
 });
 
 // Add a new IPC handler for checking and downloading browser
-ipcMain.handle('check-and-download-browser', async () => {
-  try {
-    console.log('Starting browser check/download process...');
-    const browsersPath = await ensureBrowserInstalled();
-    console.log('Browser check/download completed successfully');
-    return { success: true, browsersPath };
-  } catch (error) {
-    console.error('Browser check/download failed:', error);
-    return { success: false, error: error.message };
-  }
-});
 
-// Add a new IPC handler for checking browser existence only
-ipcMain.handle('check-browser-existence', async () => {
-  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
-  let browserInstalled = false;
 
-  try {
-    const browserDirs = await fs.readdir(browsersPath);
-    for (const dir of browserDirs) {
-      if (dir.startsWith('chromium')) {
-        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
-        await fs.access(exePath); // Check for executable existence
-        browserInstalled = true;
-        break;
-      }
-    }
-  } catch (error) {
-    browserInstalled = false; // Directory or executable not found
-  }
 
-  return { installed: browserInstalled };
-});
-
-// --- Browser Installation ---
-async function ensureBrowserInstalled() {
-  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
-  let browserInstalled = false;
-
-  try {
-    const browserDirs = await fs.readdir(browsersPath);
-    for (const dir of browserDirs) {
-      if (dir.startsWith('chromium')) {
-        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
-        await fs.access(exePath); // Check for executable existence
-        browserInstalled = true;
-        break;
-      }
-    }
-  } catch (error) {
-    browserInstalled = false; // Directory or executable not found
-  }
-
-  if (browserInstalled) {
-    console.log('Playwright browser is already installed.');
-    return browsersPath;
-  }
-
-  // Browser not found, proceed with installation
-  console.log('Browser not found, starting download process...');
-  return new Promise((resolve, reject) => {
-    console.log('Sending initial download progress message...');
-    // Check if mainWindow exists before sending message
-    if (mainWindow && mainWindow.webContents) {
-      mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
-    }
-
-    // When packaged in asar, we need to adjust the path to playwright CLI
-    const isProduction = app.isPackaged;
-    const playwrightCliPath = isProduction
-      ? path.join(app.getAppPath(), 'node_modules', 'playwright', 'cli.js')
-      : path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
-
-    console.log('Playwright CLI path:', playwrightCliPath);
-    console.log('Browsers path:', browsersPath);
-    console.log('Working directory:', isProduction ? app.getAppPath() : app.getAppPath());
-
-    const downloaderProcess = utilityProcess.fork(
-      playwrightCliPath,
-      ['install', 'chromium'],
-      {
-        env: { 
-          ...process.env, 
-          PLAYWRIGHT_BROWSERS_PATH: browsersPath,
-          NODE_ENV: app.isPackaged ? 'production' : 'development'
-        },
-        cwd: isProduction ? app.getAppPath() : app.getAppPath(),
-        serviceName: 'playwright-browser-installer',
-        stdio: 'pipe' // Explicitly set stdio to ensure streams are created
-      }
-    );
-
-    console.log('Downloader process started with PID:', downloaderProcess.pid);
-
-    downloaderProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      console.log(`Playwright Installer stdout: ${output}`); // Log for debugging
-
-      // Regex to parse the percentage from Playwright's output
-      const progressRegex = /(\d+)\%\s+of/;
-      const match = output.match(progressRegex);
-
-      if (match && match[1]) {
-        const progressValue = parseInt(match[1], 10);
-        let message = '正在下载依赖文件...';
-        if (output.includes('Chromium')) {
-          message = '正在下载 Chromium 浏览器...';
-        } else if (output.includes('FFMPEG')) {
-          message = '正在下载 FFMPEG (视频解码器)...';
-        }
-        console.log(`Download progress: ${progressValue}% - ${message}`);
-        // Check if mainWindow exists before sending message
-        if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
-        }
-      }
-    });
-
-    downloaderProcess.stderr.on('data', (data) => {
-      const output = data.toString();
-      console.error(`Playwright Installer stderr: ${output}`);
-    });
-
-    downloaderProcess.on('spawn', () => {
-      console.log('Downloader process spawned successfully');
-    });
-
-    downloaderProcess.on('error', (err) => {
-      console.error('Failed to start browser downloader process:', err);
-      // Check if mainWindow exists before sending message
-      if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载启动失败', value: 0 });
-      }
-      reject(err);
-    });
-
-    downloaderProcess.on('exit', (code) => {
-      console.log(`Downloader process exited with code: ${code}`);
-      // Check if mainWindow exists before sending message
-      if (mainWindow && mainWindow.webContents) {
-        if (code === 0) {
-          mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
-          console.log('Playwright browser downloaded successfully.');
-          resolve(browsersPath);
-        } else {
-          const errorMessage = `浏览器下载失败，退出码: ${code}`;
-          mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
-          reject(new Error(errorMessage));
-        }
-      } else {
-        // If mainWindow is not available, just resolve/reject without sending message
-        if (code === 0) {
-          console.log('Playwright browser downloaded successfully.');
-          resolve(browsersPath);
-        } else {
-          const errorMessage = `浏览器下载失败，退出码: ${code}`;
-          reject(new Error(errorMessage));
-        }
-      }
-    });
-  });
-}
 
 
 // --- IPC Handlers ---
 
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
   try {
-    // Instead of downloading browser here, just check if it exists
-    const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+    // Determine the correct browsers path，it's installed in node_modules/playwright/.local-browsers by default
+    let browsersPath = path.join(__dirname, 'node_modules', 'playwright-core', '.local-browsers');
+    
+    // Check if PLAYWRIGHT_BROWSERS_PATH is already set in the environment and not '0'
+    if (process.env.PLAYWRIGHT_BROWSERS_PATH && process.env.PLAYWRIGHT_BROWSERS_PATH !== '0') {
+      browsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH;
+    }
+    // If PLAYWRIGHT_BROWSERS_PATH is '0', we keep the default browsersPath
+    
+    // Check if browser is installed
     let browserInstalled = false;
-
     try {
       const browserDirs = await fs.readdir(browsersPath);
       for (const dir of browserDirs) {
@@ -297,10 +145,6 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       }
     } catch (error) {
       browserInstalled = false; // Directory or executable not found
-    }
-
-    if (!browserInstalled) {
-      throw new Error('浏览器未安装，请重新登录以下载浏览器。');
     }
 
     return new Promise((resolve, reject) => {
@@ -331,12 +175,20 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
 
       port1.start(); // Start listening for messages
 
+      // Handle PLAYWRIGHT_BROWSERS_PATH environment variable
+      const env = { 
+        ...process.env, 
+        NODE_ENV: app.isPackaged ? 'production' : 'development'
+      };
+      
+      // Only set PLAYWRIGHT_BROWSERS_PATH if it's not "0"
+      if (browsersPath !== '0') {
+        env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
+      }
+      // If browsersPath is "0", we don't set it at all, letting Playwright use default behavior
+
       const crawlerProcess = utilityProcess.fork(crawlerPath, [], {
-        env: { 
-          ...process.env, 
-          PLAYWRIGHT_BROWSERS_PATH: browsersPath,
-          NODE_ENV: app.isPackaged ? 'production' : 'development'
-        },
+        env: env,
         serviceName: 'sues-gpa-crawler',
         stdio: 'pipe' // Ensure stdio streams are piped
       });
@@ -475,3 +327,5 @@ ipcMain.handle('delete-user-data', async () => {
     throw new Error('删除用户数据失败: ' + error.message);
   }
 });
+
+

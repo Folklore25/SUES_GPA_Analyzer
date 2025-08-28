@@ -7,7 +7,7 @@
     "start": "electron-forge start",
     "rebuild": "electron-rebuild -f -w keytar",
     "build:frontend": "vite build frontend --config vite.config.js",
-    "build": "npm run rebuild && npm run build:frontend && electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ../outputs  --overwrite",
+    "build": "npm run rebuild && npm run build:frontend && electron-forge make",
     "test": "vitest",
     "dev:frontend": "vite frontend --config vite.config.js",
     "dev:electron": "electron .",
@@ -23,41 +23,8 @@
   ],
   "author": "Folklore25",
   "license": "Apache-2.0",
-  "build": {
-    "appId": "com.sues.gpa-analyzer",
-    "productName": "SUES GPA Analyzer",
-    "icon": "logo.ico",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "src/**/*",
-      "frontend/dist/**/*"
-    ],
-    "asar": true,
-    "asarUnpack": [
-      "src/crawler/crawler.js",
-      "src/crawler/config.json",
-      "node_modules/playwright/**/*"
-    ],
-    "compression": "maximum",
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "artifactName": "${productName}-${version}-setup.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": true
-    }
+  "config": {
+    "forge": "./forge.config.js"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",

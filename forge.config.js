@@ -4,6 +4,15 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    extraResource: [
+      './scripts'
+    ],
+    // Files to unpack from the ASAR archive
+    asarUnpack: [
+      'src/crawler/crawler.js',
+      'src/crawler/config.json',
+      'node_modules/playwright/**/*'
+    ]
   },
   rebuildConfig: {},
   makers: [

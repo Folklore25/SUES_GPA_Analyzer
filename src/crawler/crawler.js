@@ -1,7 +1,7 @@
 // These modules will be imported dynamically when needed
 // const { chromium } = require('playwright');
-// const fs = require('fs').promises;
-// const path = require('path');
+const fs = require('fs').promises;
+const path = require('path');
 // const { JSDOM } = require('jsdom');
 
 // Log the current working directory and filename for debugging
@@ -158,11 +158,17 @@ class CoursesScraper {
       sendMessage('progress', { message: '正在启动浏览器...' });
       console.log('浏览器配置:', config.browser);
       
-      // 确保PLAYWRIGHT_BROWSERS_PATH环境变量已设置
+      // 检查并处理PLAYWRIGHT_BROWSERS_PATH环境变量
       if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
-        console.log('Playwright浏览器路径:', process.env.PLAYWRIGHT_BROWSERS_PATH);
+        if (process.env.PLAYWRIGHT_BROWSERS_PATH === '0') {
+          console.log('PLAYWRIGHT_BROWSERS_PATH被设置为"0"，将使用默认路径');
+          // 删除环境变量，让Playwright使用默认行为
+          delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+        } else {
+          console.log('Playwright浏览器路径:', process.env.PLAYWRIGHT_BROWSERS_PATH);
+        }
       } else {
-        console.warn('PLAYWRIGHT_BROWSERS_PATH环境变量未设置');
+        console.log('PLAYWRIGHT_BROWSERS_PATH环境变量未设置，将使用默认路径');
       }
       
       const { chromium } = require('playwright');
