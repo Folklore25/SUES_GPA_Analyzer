@@ -34,7 +34,6 @@ import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
 import RetakePlanner from './RetakePlanner';
-import DownloadProgress from './DownloadProgress';
 import PlanFAB from './PlanFAB'; // Import the new component
 
 function StatCard({ title, value, icon }) {
@@ -62,10 +61,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [isTutorialDialogOpen, setIsTutorialDialogOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const theme = useTheme();
-
-  // State for download progress dialog
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadInfo, setDownloadInfo] = useState({});
 
   // State for the global retake plan
   const [retakePlan, setRetakePlan] = useState([]);
@@ -131,35 +126,11 @@ function Dashboard({ userCredentials, toggleTheme }) {
     };
     checkTutorialDialog();
 
-    // Set up listener for browser download progress
-    const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
-      console.log('Browser download progress update:', data);
-      // As soon as download starts, take over the loading state from the button
-      setIsLoading(false);
-      setIsDownloading(true);
-      setDownloadInfo({ message: data.message, progress: data.value });
-
-      // When download is complete, wait 2 seconds then close the dialog
-      if (data.value === 100) {
-        setTimeout(() => {
-          setIsDownloading(false);
-        }, 2000);
-      }
-    });
-
-    // Cleanup listener on component unmount
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-
   }, []);
 
   const handleGetData = async () => {
     setIsLoading(true);
     setError('');
-    setDownloadInfo({});
-    // Let the listener control the download dialog visibility
-    // setIsDownloading(false); 
 
     try {
       const result = await window.electronAPI.startCrawler(userCredentials);
@@ -173,8 +144,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
     } catch (err) {
       console.error("Failed to get course data:", err);
       setError(err.message || '获取或解析课程数据时出错。');
-      // If an error occurs, ensure the download dialog is closed
-      setIsDownloading(false);
     } finally {
       setIsLoading(false);
     }
@@ -225,7 +194,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
         <Typography variant="h6" sx={{ ml: 2 }}>仪表盘</Typography>
         <Box>
           <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
-          <Button onClick={handleGetData} disabled={isLoading || isDownloading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
+          <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit"><Brightness7Icon /></IconButton>
           <IconButton sx={{ ml: 1 }} onClick={() => setAboutDialogOpen(true)} color="inherit"><InfoIcon /></IconButton>
         </Box>
@@ -258,12 +227,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
           </Box>
         </Paper>
       </Container>
-
-      <DownloadProgress 
-        open={isDownloading} 
-        message={downloadInfo.message}
-        progress={downloadInfo.progress} 
-      />
 
       <Dialog
         open={isConfirmDialogOpen}

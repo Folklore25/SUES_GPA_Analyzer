@@ -1,19 +1,19 @@
 {
   "name": "sues-gpa-analyzer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "上海工程技术大学GPA分析工具",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron-forge start",
     "rebuild": "electron-rebuild -f -w keytar",
     "build:frontend": "vite build frontend --config vite.config.js",
     "build": "npm run rebuild && npm run build:frontend",
     "test": "vitest",
     "dev:frontend": "vite frontend --config vite.config.js",
-    "dev:electron": "electron .",
+    "dev:electron": "electron-forge start",
     "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:electron\"",
-    "package": "npm run build && electron-packager ./ SUES_GPA_Analyzer --win --arch=x64 --out ./out --asar=false --prune=true --overwrite",
-    "make": "npm run package"
+    "package": "electron-forge package && node scripts/removeLocales.js",
+    "make": "echo \"Make operation disabled, only package is available\""
   },
   "keywords": [
     "gpa",
@@ -24,18 +24,15 @@
   "author": "Folklore25",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@electron/packager": "^18.4.4",
+    "@electron-forge/cli": "^7.8.3",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
+    "@electron-forge/plugin-fuses": "^7.8.3",
+    "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^4.0.1",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@rollup/plugin-commonjs": "^28.0.6",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-replace": "^6.0.2",
     "@vitejs/plugin-react": "^5.0.1",
     "concurrently": "^9.2.1",
     "electron": "^37.3.0",
     "fs-extra": "^11.3.1",
-    "rollup": "^4.49.0",
     "terser": "^5.43.1",
     "vite": "^7.1.3",
     "vitest": "^3.2.4"

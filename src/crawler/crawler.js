@@ -1,9 +1,10 @@
-const { chromium } = require('playwright');
+const playwright = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
 const { JSDOM } = require('jsdom');
 const config = require('./config.json');
 
+// Handle path for packaged app
 let parentPort = null;
 
 // 发送消息给父进程
@@ -128,17 +129,33 @@ class CoursesScraper {
   async setupBrowser() {
     try {
       sendMessage('progress', { message: '正在启动浏览器...' });
-      this.browser = await chromium.launch({
+      // Use the browser type specified in config
+      const browserType = config.browser.type || 'chromium';
+      
+      // Check if the specified browser type is available
+      if (!playwright[browserType]) {
+        throw new Error(`指定的浏览器类型 "${browserType}" 不可用。可用的浏览器类型: ${Object.keys(playwright).join(', ')}`);
+      }
+      
+      // Prepare launch options
+      const launchOptions = {
         headless: config.browser.headless,
         args: config.browser.args
-      });
+      };
+      
+      // Add channel option if specified
+      if (config.browser.channel) {
+        launchOptions.channel = config.browser.channel;
+      }
+      
+      this.browser = await playwright[browserType].launch(launchOptions);
       
       this.context = await this.browser.newContext();
       this.page = await this.context.newPage();
       sendMessage('progress', { message: '浏览器启动成功' });
     } catch (error) {
       console.error('设置浏览器失败:', error);
-      throw error;
+      throw new Error(`浏览器启动失败: ${error.message}`);
     }
   }
 

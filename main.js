@@ -5,6 +5,10 @@ const fs = require('fs').promises;
 const IniHelper = require('./src/utils/iniHelper');
 const keytar = require('keytar');
 
+// Handle path for packaged app
+const isDev = !app.isPackaged;
+const appPath = isDev ? __dirname : path.join(process.resourcesPath, 'app');
+
 const SERVICE_NAME = 'SUES_GPA_Analyzer';
 
 // 保持对窗口对象的全局引用，如果不这么做，当JavaScript对象被垃圾回收时，窗口会自动关闭
@@ -100,7 +104,7 @@ app.whenReady().then(async () => {
   await migrateDataIfNeeded();
   createWindow();
   
-  // Example: Trigger browser installation check after window is created
+  // Removed browser installation check
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -112,118 +116,10 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// --- Browser Installation ---
-async function ensureBrowserInstalled() {
-  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
-  let browserInstalled = false;
-
-  try {
-    const browserDirs = await fs.readdir(browsersPath);
-    for (const dir of browserDirs) {
-      if (dir.startsWith('chromium')) {
-        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
-        await fs.access(exePath); // Check for executable existence
-        browserInstalled = true;
-        break;
-      }
-    }
-  } catch (error) {
-    browserInstalled = false; // Directory or executable not found
-  }
-
-  if (browserInstalled) {
-    console.log('Playwright browser is already installed.');
-    return browsersPath;
-  }
-
-  // Ensure mainWindow exists before attempting to send messages
-  if (!mainWindow) {
-     console.warn('Main window is not available to report browser download progress.');
-     // We could potentially wait for the window, but for now, let's proceed with installation
-     // and assume the UI will handle any state where progress isn't shown.
-     // A more robust solution might involve IPC from renderer to trigger this check post-load.
-  }
-
-  // Browser not found, proceed with installation
-  return new Promise((resolve, reject) => {
-    // Check again just before sending the initial message
-    if (mainWindow) {
-       mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
-    }
-
-    const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
-
-    const downloaderProcess = utilityProcess.fork(
-      playwrightCliPath,
-      ['install', 'chromium'],
-      {
-        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
-        cwd: app.getAppPath(),
-        serviceName: 'playwright-browser-installer',
-        stdio: 'pipe' // Explicitly set stdio to ensure streams are created
-      }
-    );
-
-    downloaderProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      console.log(`Playwright Installer: ${output}`); // Log for debugging
-
-      // Regex to parse the percentage from Playwright's output
-      const progressRegex = /(\d+)\%\s+of/;
-      const match = output.match(progressRegex);
-
-      if (match && match[1]) {
-        const progressValue = parseInt(match[1], 10);
-        let message = '正在下载依赖文件...';
-        if (output.includes('Chromium')) {
-          message = '正在下载 Chromium 浏览器...';
-        } else if (output.includes('FFMPEG')) {
-          message = '正在下载 FFMPEG (视频解码器)...';
-        }
-        // Only send progress updates if mainWindow exists
-        if (mainWindow) {
-           mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
-        }
-      }
-    });
-
-    downloaderProcess.stderr.on('data', (data) => {
-      console.error(`Playwright Installer Error: ${data.toString()}`);
-    });
-
-    downloaderProcess.on('exit', (code) => {
-      // Send final status update if mainWindow exists
-      if (mainWindow) {
-         if (code === 0) {
-            mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
-         } else {
-            const errorMessage = `浏览器下载失败，退出码: ${code}`;
-            mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
-         }
-      }
-      if (code === 0) {
-        console.log('Playwright browser downloaded successfully.');
-        resolve(browsersPath);
-      } else {
-        const errorMessage = `浏览器下载失败，退出码: ${code}`;
-        reject(new Error(errorMessage));
-      }
-    });
-
-    downloaderProcess.on('error', (err) => {
-      console.error('Failed to start browser downloader process.', err);
-      reject(err);
-    });
-  });
-}
-
-
 // --- IPC Handlers ---
 
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
   try {
-    const browsersPath = await ensureBrowserInstalled();
-
     return new Promise((resolve, reject) => {
       let settled = false;
 
@@ -249,7 +145,6 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       port1.start(); // Start listening for messages
 
       const crawlerProcess = utilityProcess.fork(crawlerPath, [], {
-        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
         serviceName: 'sues-gpa-crawler',
         stdio: 'pipe' // Ensure stdio streams are piped
       });

@@ -1,5 +1,7 @@
 {
   "browser": {
+    "type": "chromium",
+    "channel": "msedge",
     "headless": false,
     "args": [
       "--disable-gpu",
