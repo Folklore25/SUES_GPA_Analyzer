@@ -7,7 +7,7 @@ function parseCSVLine(line) {
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+    const char = line[i];// @Github:Folklore25
 
     if (char === '"') {
       if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
@@ -18,7 +18,7 @@ function parseCSVLine(line) {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      values.push(currentValue.trim());
+      values.push(currentValue.trim());// @Github:Folklore25
       currentValue = '';
     } else {
       currentValue += char;
@@ -34,7 +34,7 @@ export function parseCSV(csvText) {
 
   let cleanText = csvText;
   // Remove potential BOM at the start of the file
-  if (cleanText.charCodeAt(0) === 0xFEFF) {
+  if (cleanText.charCodeAt(0) === 0xFEFF) {// @Github:Folklore25
     cleanText = cleanText.slice(1);
   }
 
@@ -52,7 +52,7 @@ export function parseCSV(csvText) {
     const values = parseCSVLine(lines[i]);
     if (values.length === headers.length) {
       const row = {};
-      for (let j = 0; j < headers.length; j++) {
+      for (let j = 0; j < headers.length; j++) {// @Github:Folklore25
         row[headers[j]] = values[j];
       }
       result.push(row);

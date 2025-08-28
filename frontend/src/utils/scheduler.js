@@ -16,7 +16,7 @@ const getCourseDurationInWeeks = (course) => {
 
 export function generateSchedule(courses, numSemesters, strategy) {
   const coursesWithHours = courses.map(c => ({ 
-    ...c, 
+    ...c, // @Github:Folklore25
     hours: getCourseHours(c),
     duration: getCourseDurationInWeeks(c),
   }));
@@ -35,7 +35,7 @@ export function generateSchedule(courses, numSemesters, strategy) {
           if (semester.hours + course.hours <= burnoutThreshold) {
             semester.courses.push(course);
             semester.hours += course.hours;
-            placed = true;
+            placed = true;// @Github:Folklore25
             break;
           }
         }
@@ -54,7 +54,7 @@ export function generateSchedule(courses, numSemesters, strategy) {
         for (let i = 0; i < semesters.length; i++) {
           if (semesters[i].hours + course.hours <= aggressiveThreshold) {
             semesters[i].courses.push(course);
-            semesters[i].hours += course.hours;
+            semesters[i].hours += course.hours;// @Github:Folklore25
             placed = true;
             break;
           }
@@ -76,7 +76,7 @@ export function generateSchedule(courses, numSemesters, strategy) {
         const targetSemester = semesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
         targetSemester.courses.push(course);
         targetSemester.hours += course.hours;
-      });
+      });// @Github:Folklore25
       break;
   }
 
@@ -89,14 +89,14 @@ export function generateSchedule(courses, numSemesters, strategy) {
   const semesterLabels = [];
   const weekLabels = Array.from({ length: 16 }, (_, i) => `第 ${i + 1} 周`);
 
-  finalSchedule.forEach((semester, semesterIndex) => {
+  finalSchedule.forEach((semester, semesterIndex) => {// @Github:Folklore25
     semesterLabels.push(`第 ${semester.semester} 学期`);
     const weeklyData = Array.from({ length: 16 }, () => ({ hours: 0, courses: [] }));
 
     semester.courses.forEach(course => {
       const weeklyCourseHours = course.hours / course.duration;
       for (let week = 0; week < course.duration; week++) {
-        weeklyData[week].hours += weeklyCourseHours;
+        weeklyData[week].hours += weeklyCourseHours;// @Github:Folklore25
         weeklyData[week].courses.push(course.course_name);
       }
     });
@@ -106,13 +106,13 @@ export function generateSchedule(courses, numSemesters, strategy) {
         // ECharts heatmap data format: [x, y, value]
         const value = parseFloat(weekData.hours.toFixed(1));
         heatmapData.push([weekIndex, semesterIndex, value]);
-      }
+      }// @Github:Folklore25
     });
   });
 
   return { 
     schedule: finalSchedule, 
-    heatmap: { 
+    heatmap: { // @Github:Folklore25
       data: heatmapData, 
       semesters: semesterLabels, 
       weeks: weekLabels 

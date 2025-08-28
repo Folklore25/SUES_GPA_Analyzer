@@ -25,7 +25,7 @@ class IniHelper {
 
     const lines = content.split('\n');
     for (const line of lines) {
-      const trimmedLine = line.trim();
+      const trimmedLine = line.trim();// @Github:Folklore25
       
       // 跳过空行和注释
       if (!trimmedLine || trimmedLine.startsWith(';') || trimmedLine.startsWith('#')) {
@@ -41,7 +41,7 @@ class IniHelper {
       }
 
       // 解析键值对
-      const keyValueMatch = trimmedLine.match(/^([^=]+)=(.*)$/);
+      const keyValueMatch = trimmedLine.match(/^([^=]+)=(.*)$/);// @Github:Folklore25
       if (keyValueMatch) {
         const key = keyValueMatch[1].trim();
         let value = keyValueMatch[2].trim();
@@ -67,7 +67,7 @@ class IniHelper {
   stringify(data) {
     let result = '';
 
-    for (const [section, values] of Object.entries(data)) {
+    for (const [section, values] of Object.entries(data)) {// @Github:Folklore25
       if (section !== 'default') {
         result += `[${section}]\n`;
       }
@@ -76,7 +76,7 @@ class IniHelper {
         result += `${key}=${value}\n`;
       }
 
-      result += '\n';
+      result += '\n';// @Github:Folklore25
     }
 
     return result;

@@ -122,7 +122,7 @@ export function processGradeDistributionData(data) {
  * The size of the bubble represents the number of courses at that coordinate.
  */
 export function processCreditGpaBubbleData(data) {
-  const pointMap = new Map();
+  const pointMap = new Map();// @Github:Folklore25
 
   data.forEach(course => {
     const credits = parseFloat(course.course_weight);
@@ -134,7 +134,7 @@ export function processCreditGpaBubbleData(data) {
     if (pointMap.has(key)) {
       const point = pointMap.get(key);
       point.count += 1;
-      point.courseNames.push(course.course_name);
+      point.courseNames.push(course.course_name);// @Github:Folklore25
     } else {
       pointMap.set(key, {
         credits,
@@ -147,7 +147,7 @@ export function processCreditGpaBubbleData(data) {
 
   // ECharts scatter data format: [credit, gpa, count, courseNames]
   return Array.from(pointMap.values()).map(p => [
-    p.credits,
+    p.credits,// @Github:Folklore25
     p.gpa,
     p.count,
     p.courseNames.join('\n') // Join course names for tooltip
@@ -163,7 +163,7 @@ export function processGpaHeatmapData(data) {
   const validData = data.filter(course => {
     const semester = course.course_semester.split(',')[0].trim();
     const credits = parseFloat(course.course_weight);
-    const gpa = parseFloat(course.course_gpa);
+    const gpa = parseFloat(course.course_gpa);// @Github:Folklore25
     
     // Check if semester is numeric
     const semesterNum = parseInt(semester, 10);
@@ -182,7 +182,7 @@ export function processGpaHeatmapData(data) {
 
     const key = `${semester}-${credits}`;
     if (heatmapData.has(key)) {
-      const entry = heatmapData.get(key);
+      const entry = heatmapData.get(key);// @Github:Folklore25
       entry.totalGpa += gpa;
       entry.count += 1;
     } else {
@@ -194,7 +194,7 @@ export function processGpaHeatmapData(data) {
     .filter(s => !isNaN(parseInt(s, 10))) // Filter out non-numeric semesters
     .sort((a, b) => parseInt(a, 10) - parseInt(b, 10)); // Sort numerically
   
-  const creditValues = [...new Set(validData.map(c => parseFloat(c.course_weight)))]
+  const creditValues = [...new Set(validData.map(c => parseFloat(c.course_weight)))]// @Github:Folklore25
     .filter(c => !isNaN(c))
     .sort((a, b) => a - b);
 
@@ -205,7 +205,7 @@ export function processGpaHeatmapData(data) {
       if (heatmapData.has(key)) {
         const entry = heatmapData.get(key);
         const avgGpa = parseFloat((entry.totalGpa / entry.count).toFixed(2));
-        echartsData.push([sIndex, cIndex, avgGpa]);
+        echartsData.push([sIndex, cIndex, avgGpa]);// @Github:Folklore25
       }
     });
   });

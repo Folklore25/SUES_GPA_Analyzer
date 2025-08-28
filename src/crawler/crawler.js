@@ -14,9 +14,8 @@ console.log('脚本目录路径:', __dirname);
 const isProduction = process.env.NODE_ENV === 'production';
 console.log('运行环境:', isProduction ? 'production' : 'development');
 
-const configPath = isProduction
-  ? path.join(path.dirname(__filename), 'config.json')
-  : './config.json';
+// When packaged in ASAR, we need to look for config.json in the same directory as the script
+const configPath = path.join(__dirname, 'config.json');
   
 console.log('配置文件路径:', configPath);
 
@@ -163,9 +162,16 @@ class CoursesScraper {
         if (process.env.PLAYWRIGHT_BROWSERS_PATH === '0') {
           console.log('PLAYWRIGHT_BROWSERS_PATH被设置为"0"，将使用默认路径');
           // 删除环境变量，让Playwright使用默认行为
-          delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+          delete process.env.PLAYWRIGHT_BROWSERS_PATH;// @Github:Folklore25
         } else {
           console.log('Playwright浏览器路径:', process.env.PLAYWRIGHT_BROWSERS_PATH);
+          // 验证路径是否存在
+          try {
+            await fs.access(process.env.PLAYWRIGHT_BROWSERS_PATH);
+            console.log('Playwright浏览器路径存在');
+          } catch (err) {
+            console.log('Playwright浏览器路径不存在:', err.message);
+          }
         }
       } else {
         console.log('PLAYWRIGHT_BROWSERS_PATH环境变量未设置，将使用默认路径');
@@ -179,7 +185,7 @@ class CoursesScraper {
       
       this.context = await this.browser.newContext();
       this.page = await this.context.newPage();
-      sendMessage('progress', { message: '浏览器启动成功' });
+      sendMessage('progress', { message: '浏览器启动成功' });// @Github:Folklore25
     } catch (error) {
       console.error('设置浏览器失败:', error);
       throw error;
@@ -195,7 +201,7 @@ class CoursesScraper {
       await this.page.fill("//input[@id='username']", this.username);
       // 输入密码
       await this.page.fill("//input[@id='password']", this.password);
-      // 点击登录按钮
+      // 点击登录按钮// @Github:Folklore25
       await this.page.click("//input[@id='passbutton']");
       
       // 等待跳转
@@ -203,14 +209,14 @@ class CoursesScraper {
       sendMessage('progress', { message: '第一次登录完成' });
       return true;
     } catch (error) {
-      console.error('第一次登录失败:', error);
+      console.error('第一次登录失败:', error);// @Github:Folklore25
       return false;
     }
   }
 
   async performSecondLogin() {
     try {
-      sendMessage('progress', { message: '开始第二次登录...' });
+      sendMessage('progress', { message: '开始第二次登录...' });// @Github:Folklore25
       
       // 输入用户名
       await this.page.fill("//input[@placeholder='用户名']", this.username);
@@ -226,7 +232,7 @@ class CoursesScraper {
       console.error('第二次登录失败:', error);
       return false;
     }
-  }
+  }// @Github:Folklore25
 
   async findAndSwitchToFrame() {
     try {
@@ -249,7 +255,7 @@ class CoursesScraper {
     } catch (error) {
       console.error('查找iframe失败:', error);
       return false;
-    }
+    }// @Github:Folklore25
   }
 
   async getCourseTableContent() {
@@ -267,7 +273,7 @@ class CoursesScraper {
       sendMessage('progress', { message: '成功获取课程表内容' });
       return content;
     } catch (error) {
-      console.error('获取课程表失败:', error);
+      console.error('获取课程表失败:', error);// @Github:Folklore25
       return null;
     }
   }
@@ -298,7 +304,7 @@ class CoursesScraper {
         const doc = dom.window.document;
         
         // 查找所有包含课程数据的行
-        const courseRows = doc.querySelectorAll('tr[data-result]');
+        const courseRows = doc.querySelectorAll('tr[data-result]');// @Github:Folklore25
         
         // 解析每一行数据
         for (const row of courseRows) {
@@ -330,7 +336,7 @@ class CoursesScraper {
   async close() {
     if (this.browser) {
       await this.browser.close();
-    }
+    }// @Github:Folklore25
   }
 }
 
@@ -369,7 +375,7 @@ process.parentPort.on('message', async (e) => {
       // 发送错误消息
       sendMessage('error', { 
         success: false, 
-        message: error.message 
+        message: error.message // @Github:Folklore25
       });
     }
   }

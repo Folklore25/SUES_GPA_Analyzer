@@ -5,24 +5,21 @@ module.exports = {
   packagerConfig: {
     asar: true,
     extraResource: [
-      './scripts'
+      'node_modules/playwright-core/',
     ],
     // Files to unpack from the ASAR archive
     asarUnpack: [
       'src/crawler/crawler.js',
       'src/crawler/config.json',
-      'node_modules/playwright/**/*'
+      // Unpack Playwright browsers when ASAR is enabled
+      'node_modules/playwright-core/.local-browsers/**/*'
     ]
   },
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
-      config: {},
-    },
-    {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      platforms: ['darwin', 'win32'],
     },
     {
       name: '@electron-forge/maker-deb',

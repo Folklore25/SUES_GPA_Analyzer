@@ -5,52 +5,53 @@ const fs = require('fs').promises;
 // IniHelper will be imported dynamically when needed
 // keytar will be imported dynamically when needed
 
-const SERVICE_NAME = 'SUES_GPA_Analyzer';
+// @Github:Folklore25
+const SERVICE_NAME = 'SUES_GPA_Analyzer'; // @Github:Folklore25
 
 // 保持对窗口对象的全局引用，如果不这么做，当JavaScript对象被垃圾回收时，窗口会自动关闭
-let mainWindow;
+let mainWindow; // @Github:Folklore25
 
 // --- Path Setup ---
 // Get the userData path once app is ready
-let userDataPath;
+let userDataPath; // @Github:Folklore25
 app.on('ready', () => {
-  userDataPath = app.getPath('userData');
+  userDataPath = app.getPath('userData'); // @Github:Folklore25
 });
 
 // Function to get IniHelper with the correct path
-async function getIniHelper() {
+async function getIniHelper() { // @Github:Folklore25
   // Ensure userDataPath is available
-  if (!userDataPath) {
+  if (!userDataPath) { // @Github:Folklore25
     userDataPath = app.getPath('userData');
   }
   const IniHelper = require('./src/utils/iniHelper');
-  return new IniHelper(path.join(userDataPath, 'user-info.ini'));
+  return new IniHelper(path.join(userDataPath, 'user-info.ini')); // @Github:Folklore25
 }
 
 function createWindow() {
   // 创建浏览器窗口
-  mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({ // @Github:Folklore25
     width: 1200,
     height: 800,
-    webPreferences: {
+    webPreferences: { // @Github:Folklore25
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'src/renderer/preload.js')
+      preload: path.join(__dirname, 'src/renderer/preload.js') // @Github:Folklore25
     }
   });
 
   // Remove the application menu
-  Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(null); // @Github:Folklore25
 
   // Load from Vite dev server in development, or from local file in production
-  if (!app.isPackaged) {
+  if (!app.isPackaged) { // @Github:Folklore25
     // Development: Load from Vite server
     mainWindow.loadURL('http://localhost:5173');
     // Automatically open DevTools for debugging
-    mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools(); // @Github:Folklore25
   } else {
     // Production: Load from built file using file:// protocol
-    mainWindow.loadURL(url.format({
+    mainWindow.loadURL(url.format({ // @Github:Folklore25
       pathname: path.join(__dirname, 'frontend', 'dist', 'index.html'),
       protocol: 'file:',
       slashes: true
@@ -58,40 +59,40 @@ function createWindow() {
   }
 
   // 当窗口关闭时触发
-  mainWindow.on('closed', function () {
+  mainWindow.on('closed', function () { // @Github:Folklore25
     // 取消对窗口对象的引用
-    mainWindow = null;
+    mainWindow = null; // @Github:Folklore25
   });
 }
 
 // --- Data Migration ---
-async function migrateDataIfNeeded() {
+async function migrateDataIfNeeded() { // @Github:Folklore25
   const oldConfigPath = path.join(__dirname, 'user-info.ini');
 
   try {
-    await fs.access(oldConfigPath); // Check if old config exists
+    await fs.access(oldConfigPath); // Check if old config exists // @Github:Folklore25
     console.log('发现旧的配置文件，开始迁移...');
 
     const IniHelper = require('./src/utils/iniHelper');
     const oldIniHelper = new IniHelper(oldConfigPath);
-    const username = await oldIniHelper.get('user', 'username', '');
+    const username = await oldIniHelper.get('user', 'username', ''); // @Github:Folklore25
     const password = await oldIniHelper.get('user', 'password', ''); // Plain text password
-    const urlValue = await oldIniHelper.get('user', 'url', '');
+    const urlValue = await oldIniHelper.get('user', 'url', ''); // @Github:Folklore25
 
-    if (username && password) {
+    if (username && password) { // @Github:Folklore25
       const newIniHelper = await getIniHelper();
       await newIniHelper.set('user', 'username', username);
-      await newIniHelper.set('user', 'url', urlValue);
+      await newIniHelper.set('user', 'url', urlValue); // @Github:Folklore25
       const keytar = require('keytar');
       await keytar.setPassword(SERVICE_NAME, username, password);
-      console.log(`用户 ${username} 的凭据已成功迁移。`);
+      console.log(`用户 ${username} 的凭据已成功迁移。`); // @Github:Folklore25
     }
 
     await fs.unlink(oldConfigPath);
-    console.log('旧的配置文件已被成功删除。');
+    console.log('旧的配置文件已被成功删除。'); // @Github:Folklore25
 
   } catch (error) {
-    if (error.code !== 'ENOENT') {
+    if (error.code !== 'ENOENT') { // @Github:Folklore25
       console.error('迁移旧配置文件时发生错误:', error);
     }
   }
@@ -99,11 +100,20 @@ async function migrateDataIfNeeded() {
 
 
 // Electron会在初始化后调用这个方法
-app.whenReady().then(async () => {
+app.whenReady().then(async () => { // @Github:Folklore25
+  // Set PLAYWRIGHT_BROWSERS_PATH for packaged app
+  if (app.isPackaged) { // @Github:Folklore25
+    // When packaged with Electron Forge and extraResource, browsers are in 
+    // resources/playwright-core/.local-browsers
+    const path = require('path');
+    const browsersPath = path.join(process.resourcesPath, 'playwright-core', '.local-browsers'); // @Github:Folklore25
+    process.env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
+  }
+  
   await migrateDataIfNeeded();
-  createWindow();
+  createWindow(); // @Github:Folklore25
   app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) createWindow(); // @Github:Folklore25
   });
 });
 
@@ -153,11 +163,11 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       // When packaged in asar, we need to extract the path correctly
       const isProduction = app.isPackaged;
       const crawlerPath = isProduction 
-        ? path.join(app.getAppPath(), 'src', 'crawler', 'crawler.js')
+        ? path.join(app.getAppPath(), 'src', 'crawler', 'crawler.js')// @Github:Folklore25
         : path.join(__dirname, 'src', 'crawler', 'crawler.js');
 
       // Create a message channel for communication
-      const { MessageChannelMain } = require('electron');
+      const { MessageChannelMain } = require('electron');// @Github:Folklore25
       const { port1, port2 } = new MessageChannelMain();
       
       // Listen for messages from the child process
@@ -178,7 +188,7 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
       // Handle PLAYWRIGHT_BROWSERS_PATH environment variable
       const env = { 
         ...process.env, 
-        NODE_ENV: app.isPackaged ? 'production' : 'development'
+        NODE_ENV: app.isPackaged ? 'production' : 'development'// @Github:Folklore25
       };
       
       // Only set PLAYWRIGHT_BROWSERS_PATH if it's not "0"
@@ -218,7 +228,7 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         if (code !== 0) {
           reject(new Error(`爬虫进程意外退出，退出码: ${code}`));
         } else {
-          reject(new Error('爬虫进程已结束，但未返回有效数据。'));
+          reject(new Error('爬虫进程已结束，但未返回有效数据。'));// @Github:Folklore25
         }
       });
 
@@ -272,7 +282,7 @@ ipcMain.handle('save-user-info', async (event, userInfo) => {
   try {
     if (Object.keys(userInfo).length === 0 || !userInfo.username) {
       const oldUsername = await iniHelper.get('user', 'username', '');
-      const keytar = require('keytar');
+      const keytar = require('keytar');// @Github:Folklore25
       if (oldUsername) await keytar.deletePassword(SERVICE_NAME, oldUsername);
       await iniHelper.delete('user', 'username');
       await iniHelper.delete('user', 'url');
@@ -323,7 +333,7 @@ ipcMain.handle('delete-user-data', async () => {
     await fs.unlink(iniPath).catch(err => { if (err.code !== 'ENOENT') throw err; });
     return { success: true };
   } catch (error) {
-    console.error('删除用户数据时发生错误:', error);
+    console.error('删除用户数据时发生错误:', error);// @Github:Folklore25
     throw new Error('删除用户数据失败: ' + error.message);
   }
 });
