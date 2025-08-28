@@ -7,6 +7,11 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { useTheme } from '@mui/material/styles';
 
 function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -14,6 +19,9 @@ function Login({ onLoginSuccess }) {
   const [url, setUrl] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const [isTutorialDialogOpen, setIsTutorialDialogOpen] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const theme = useTheme();
 
   useEffect(() => {
     const loadInfo = async () => {
@@ -24,6 +32,11 @@ function Login({ onLoginSuccess }) {
           setPassword(userInfo.password);
           setUrl(userInfo.url);
           setRememberMe(true);
+        }
+        
+        // Check if tutorial dialog should be shown
+        if (!userInfo || !userInfo.showTutorialDialog || userInfo.showTutorialDialog === 'true') {
+          setIsTutorialDialogOpen(true);
         }
       } catch (err) {
         console.error("Failed to load user info:", err);
@@ -50,6 +63,26 @@ function Login({ onLoginSuccess }) {
       console.error('Failed to save user info:', err);
       setError(err.message || '保存用户信息时发生错误。');
     }
+  };
+
+  const handleOpenTutorial = () => {
+    window.electronAPI.openExternalUrl("https://www.bilibili.com/video/BV1BBcGebEru");
+  };
+
+  const handleCloseTutorial = async () => {
+    if (dontShowAgain) {
+      try {
+        // Save the preference to not show the dialog again
+        const userInfo = await window.electronAPI.loadUserInfo();
+        await window.electronAPI.saveUserInfo({
+          ...userInfo,
+          showTutorialDialog: 'false'
+        });
+      } catch (err) {
+        console.error("Failed to save tutorial dialog preference:", err);
+      }
+    }
+    setIsTutorialDialogOpen(false);
   };
 
   return (
@@ -133,6 +166,153 @@ function Login({ onLoginSuccess }) {
           </form>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isTutorialDialogOpen}
+        onClose={handleCloseTutorial}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: 24,
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            textAlign: 'center', 
+            pb: 1,
+            pt: 2,
+            fontWeight: 'bold',
+            color: 'text.primary'
+          }}
+        >
+          欢迎使用 SUES GPA Analyzer
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            textAlign: 'center',
+            minHeight: 150,
+            justifyContent: 'center'
+          }}>
+            <Box sx={{ width: '100%', textAlign: 'left', pl: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 6, 
+                    height: 6, 
+                    borderRadius: '50%', 
+                    backgroundColor: 'primary.main', 
+                    mt: '0.7em',
+                    mr: 2,
+                    flexShrink: 0
+                  }} 
+                />
+                <Typography 
+                  variant="body1" 
+                  color="text.primary" 
+                  sx={{ 
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                  }} 
+                >
+                  第一次使用？请点击"查看教程"了解这个软件的所有功能！
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                <Box 
+                  sx={{ 
+                    width: 6, 
+                    height: 6, 
+                    borderRadius: '50%', 
+                    backgroundColor: 'primary.main', 
+                    mt: '0.7em',
+                    mr: 2,
+                    flexShrink: 0
+                  }} 
+                />
+                <Typography 
+                  variant="body1" 
+                  color="text.primary" 
+                  sx={{ 
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                  }} 
+                >
+                  您的密码被keytar加密后保存在本地，且不会被上传。若您想要删除数据，请点击右上角的"<Box component="span" color="error.main">删除我的数据</Box>"按钮。
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          px: 3, 
+          pb: 3,
+          pt: 1 
+        }}>
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+            <Button 
+              variant="contained" 
+              onClick={handleOpenTutorial}
+              size="large"
+              sx={{ 
+                borderRadius: 6,
+                px: 4,
+                py: 1.5,
+                minWidth: 120,
+                fontWeight: 'bold',
+                textTransform: 'none',
+                boxShadow: 3,
+                '&:hover': {
+                  boxShadow: 6,
+                }
+              }}
+            >
+              查看教程
+            </Button>
+            <Button 
+              onClick={handleCloseTutorial}
+              variant="outlined"
+              size="large"
+              sx={{ 
+                borderRadius: 6,
+                px: 4,
+                py: 1.5,
+                minWidth: 120,
+                fontWeight: 'bold',
+                textTransform: 'none',
+              }}
+            >
+              朕已阅
+            </Button>
+          </Box>
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label="不再提示"
+              sx={{ 
+                '& .MuiFormControlLabel-label': { 
+                  fontSize: '0.875rem',
+                  color: 'text.secondary'
+                } 
+              }}
+            />
+          </Box>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

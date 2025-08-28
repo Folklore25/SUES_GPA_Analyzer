@@ -5,8 +5,8 @@ const path = require('path');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: './logo.ico', // Set the application icon
     extraResource: [
-      './node_modules/playwright'
     ],
     // Ignore unnecessary files to reduce package size
     ignore: [

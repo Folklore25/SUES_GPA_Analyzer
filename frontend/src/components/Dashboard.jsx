@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { parseCSV } from '../utils/csvParser';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
@@ -58,8 +56,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [activeTab, setActiveTab] = useState(0);
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isAboutDialogOpen, setAboutDialogOpen] = useState(false);
-  const [isTutorialDialogOpen, setIsTutorialDialogOpen] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const theme = useTheme();
 
   // State for the global retake plan
@@ -73,26 +69,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
 
   const handleRemoveFromPlan = (courseCode) => {
     setRetakePlan(retakePlan.filter(c => c.course_code !== courseCode));
-  };
-
-  const handleOpenTutorial = () => {
-    window.electronAPI.openExternalUrl("https://www.bilibili.com/video/BV1BBcGebEru");
-  };
-
-  const handleCloseTutorial = async () => {
-    if (dontShowAgain) {
-      try {
-        // Save the preference to not show the dialog again
-        const userInfo = await window.electronAPI.loadUserInfo();
-        await window.electronAPI.saveUserInfo({
-          ...userInfo,
-          showTutorialDialog: 'false'
-        });
-      } catch (err) {
-        console.error("Failed to save tutorial dialog preference:", err);
-      }
-    }
-    setIsTutorialDialogOpen(false);
   };
 
   useEffect(() => {
@@ -110,22 +86,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
       }
     };
     initialLoad();
-
-    // Check if tutorial dialog should be shown
-    const checkTutorialDialog = async () => {
-      try {
-        const userInfo = await window.electronAPI.loadUserInfo();
-        if (!userInfo || !userInfo.showTutorialDialog || userInfo.showTutorialDialog === 'true') {
-          setIsTutorialDialogOpen(true);
-        }
-      } catch (err) {
-        console.error("Failed to check tutorial dialog status:", err);
-        // Show dialog by default if there's an error
-        setIsTutorialDialogOpen(true);
-      }
-    };
-    checkTutorialDialog();
-
   }, []);
 
   const handleGetData = async () => {
@@ -275,154 +235,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAboutDialogOpen(false)}>关闭</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={isTutorialDialogOpen}
-        onClose={handleCloseTutorial}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: 24,
-          }
-        }}
-      >
-        <DialogTitle 
-          sx={{ 
-            textAlign: 'center', 
-            pb: 1,
-            pt: 2,
-            fontWeight: 'bold',
-            color: 'black'
-          }}
-        >
-          欢迎使用 SUES GPA Analyzer
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            textAlign: 'center',
-            minHeight: 150,
-            justifyContent: 'center'
-          }}>
-            <Box sx={{ width: '100%', textAlign: 'left', pl: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                <Box 
-                  sx={{ 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: '50%', 
-                    backgroundColor: 'primary.main', 
-                    mt: '0.7em',
-                    mr: 2,
-                    flexShrink: 0
-                  }} 
-                />
-                <Typography 
-                  variant="body1" 
-                  color="text.primary" 
-                  sx={{ 
-                    fontSize: '1.1rem',
-                    fontWeight: 500
-                  }} 
-                >
-                  第一次使用？请点击"查看教程"了解这个软件的所有功能！
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                <Box 
-                  sx={{ 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: '50%', 
-                    backgroundColor: 'primary.main', 
-                    mt: '0.7em',
-                    mr: 2,
-                    flexShrink: 0
-                  }} 
-                />
-                <Typography 
-                  variant="body1" 
-                  color="text.primary" 
-                  sx={{ 
-                    fontSize: '1.1rem',
-                    fontWeight: 500
-                  }} 
-                >
-                  您的所有数据均保存在本地，且不会被上传。若您想要删除数据，请点击右上角的"<Box component="span" color="error.main">删除我的数据</Box>"按钮。
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          px: 3, 
-          pb: 3,
-          pt: 1 
-        }}>
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
-            <Button 
-              variant="contained" 
-              color="success"
-              onClick={handleOpenTutorial}
-              size="large"
-              sx={{ 
-                borderRadius: 6,
-                px: 4,
-                py: 1.5,
-                minWidth: 120,
-                fontWeight: 'bold',
-                textTransform: 'none',
-                boxShadow: 3,
-                '&:hover': {
-                  boxShadow: 6,
-                }
-              }}
-            >
-              查看教程
-            </Button>
-            <Button 
-              onClick={handleCloseTutorial}
-              variant="outlined"
-              size="large"
-              sx={{ 
-                borderRadius: 6,
-                px: 4,
-                py: 1.5,
-                minWidth: 120,
-                fontWeight: 'bold',
-                textTransform: 'none',
-              }}
-            >
-              朕已阅
-            </Button>
-          </Box>
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={dontShowAgain}
-                  onChange={(e) => setDontShowAgain(e.target.checked)}
-                  color="primary"
-                  size="small"
-                />
-              }
-              label="不再提示"
-              sx={{ 
-                '& .MuiFormControlLabel-label': { 
-                  fontSize: '0.875rem',
-                  color: 'text.secondary'
-                } 
-              }}
-            />
-          </Box>
         </DialogActions>
       </Dialog>
 
