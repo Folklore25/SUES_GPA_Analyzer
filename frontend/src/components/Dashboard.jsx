@@ -1,10 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { parseCSV } from '../utils/csvParser';
-import { 
-  Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, 
-  Card, CardContent, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, Avatar
-} from '@mui/material';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
+import Avatar from '@mui/material/Avatar';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme } from '@mui/material/styles';
 import SchoolIcon from '@mui/icons-material/School';
@@ -13,7 +29,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import InfoIcon from '@mui/icons-material/Info';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import EmailIcon from '@mui/icons-material/Email';
+import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
@@ -43,6 +59,8 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [activeTab, setActiveTab] = useState(0);
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isAboutDialogOpen, setAboutDialogOpen] = useState(false);
+  const [isTutorialDialogOpen, setIsTutorialDialogOpen] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const theme = useTheme();
 
   // State for download progress dialog
@@ -62,6 +80,26 @@ function Dashboard({ userCredentials, toggleTheme }) {
     setRetakePlan(retakePlan.filter(c => c.course_code !== courseCode));
   };
 
+  const handleOpenTutorial = () => {
+    window.electronAPI.openExternalUrl("https://www.bilibili.com/video/BV1BBcGebEru");
+  };
+
+  const handleCloseTutorial = async () => {
+    if (dontShowAgain) {
+      try {
+        // Save the preference to not show the dialog again
+        const userInfo = await window.electronAPI.loadUserInfo();
+        await window.electronAPI.saveUserInfo({
+          ...userInfo,
+          showTutorialDialog: 'false'
+        });
+      } catch (err) {
+        console.error("Failed to save tutorial dialog preference:", err);
+      }
+    }
+    setIsTutorialDialogOpen(false);
+  };
+
   useEffect(() => {
     const initialLoad = async () => {
       try {
@@ -77,6 +115,21 @@ function Dashboard({ userCredentials, toggleTheme }) {
       }
     };
     initialLoad();
+
+    // Check if tutorial dialog should be shown
+    const checkTutorialDialog = async () => {
+      try {
+        const userInfo = await window.electronAPI.loadUserInfo();
+        if (!userInfo || !userInfo.showTutorialDialog || userInfo.showTutorialDialog === 'true') {
+          setIsTutorialDialogOpen(true);
+        }
+      } catch (err) {
+        console.error("Failed to check tutorial dialog status:", err);
+        // Show dialog by default if there's an error
+        setIsTutorialDialogOpen(true);
+      }
+    };
+    checkTutorialDialog();
 
     // Set up listener for browser download progress
     const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
@@ -244,21 +297,135 @@ function Dashboard({ userCredentials, toggleTheme }) {
             />
             <Typography variant="h6" component="h3">Folklore25</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-              SUES里一位默默热爱着这个学校的金融学学生，希望各位留子能好好利用这个玩具，申到大家心仪的大学。共勉。
+              金融学老登，希望各位留子能好好利用这个玩具，申到大家心仪的大学。共勉。
             </Typography>
             <Divider sx={{ my: 2, width: '100%' }} />
             <Box>
               <IconButton href="https://github.com/Folklore25" target="_blank">
                 <GitHubIcon />
               </IconButton>
-              <IconButton href="mailto:rockboy1125@gmail.com">
-                <EmailIcon />
+              <IconButton onClick={() => window.electronAPI.openExternalUrl("https://space.bilibili.com/230217809")}>
+                <OndemandVideoIcon />
               </IconButton>
             </Box>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setAboutDialogOpen(false)}>关闭</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isTutorialDialogOpen}
+        onClose={handleCloseTutorial}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: 24,
+          }
+        }}
+      >
+        <DialogTitle 
+          sx={{ 
+            textAlign: 'center', 
+            pb: 1,
+            pt: 2,
+            fontWeight: 'bold',
+            color: 'black'
+          }}
+        >
+          欢迎使用 SUES GPA Analyzer
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            textAlign: 'center',
+            minHeight: 130,
+            justifyContent: 'center'
+          }}>
+            <Typography 
+              variant="body1" 
+              color="text.primary" 
+              sx={{ 
+                mb: 1,
+                fontSize: '1.1rem',
+                fontWeight: 500,
+                whiteSpace: 'pre-line'
+              }} 
+            >
+              第一次使用？
+              {'\n'}请点击“查看教程”了解这个软件的所有功能！
+              
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          px: 3, 
+          pb: 3,
+          pt: 1 
+        }}>
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+            <Button 
+              variant="contained" 
+              color="success"
+              onClick={handleOpenTutorial}
+              size="large"
+              sx={{ 
+                borderRadius: 6,
+                px: 4,
+                py: 1.5,
+                minWidth: 120,
+                fontWeight: 'bold',
+                textTransform: 'none',
+                boxShadow: 3,
+                '&:hover': {
+                  boxShadow: 6,
+                }
+              }}
+            >
+              查看教程
+            </Button>
+            <Button 
+              onClick={handleCloseTutorial}
+              variant="outlined"
+              size="large"
+              sx={{ 
+                borderRadius: 6,
+                px: 4,
+                py: 1.5,
+                minWidth: 120,
+                fontWeight: 'bold',
+                textTransform: 'none',
+              }}
+            >
+              朕已阅
+            </Button>
+          </Box>
+          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label="不再提示"
+              sx={{ 
+                '& .MuiFormControlLabel-label': { 
+                  fontSize: '0.875rem',
+                  color: 'text.secondary'
+                } 
+              }}
+            />
+          </Box>
         </DialogActions>
       </Dialog>
 

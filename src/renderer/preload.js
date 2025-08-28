@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveUserInfo: (userInfo) => ipcRenderer.invoke('save-user-info', userInfo),
   loadUserInfo: () => ipcRenderer.invoke('load-user-info'),
   deleteUserData: () => ipcRenderer.invoke('delete-user-data'),
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
 
   onBrowserDownloadProgress: (callback) => {
     const subscription = (_event, data) => callback(data);

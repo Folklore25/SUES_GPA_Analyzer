@@ -1,6 +1,10 @@
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Card, CardContent, Typography, Box, useTheme } from '@mui/material';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
 import {
   processGpaTrendData,
   processGradeDistributionData,

@@ -4,6 +4,14 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: false,
+    ignore: [
+      /^\/node_modules\/(?!(@mui|@emotion|react|react-dom|keytar|playwright|echarts|echarts-for-react|jsdom|mathjs))/,
+      /^\/node_modules\/.*\/(test|tests|__tests__|docs|examples)/,
+      /^\/(src|scripts)/,
+      /^\/.*\.(log|md|txt)$/,
+    ],
+    prune: true,
+    dereference: true,
   },
   rebuildConfig: {},
   makers: [
@@ -37,8 +45,11 @@ module.exports = {
       [FuseV1Options.EnableCookieEncryption]: true,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
-      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
-      [FuseV1Options.OnlyLoadAppFromAsar]: true,
+      [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: false,
+      [FuseV1Options.OnlyLoadAppFromAsar]: false,
     }),
   ],
+  hooks: {
+    afterPack: require('./scripts/removeLocales.js').default,
+  },
 };

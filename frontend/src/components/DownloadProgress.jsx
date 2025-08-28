@@ -1,5 +1,10 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, Box, Typography, LinearProgress } from '@mui/material';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import LinearProgress from '@mui/material/LinearProgress';
 
 function DownloadProgress({ open, message, progress }) {
   const percent = progress || 0;

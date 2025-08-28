@@ -1,8 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, Card, 
-  TextField, Slider, ToggleButton, ToggleButtonGroup, TableSortLabel, IconButton
-} from '@mui/material';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import TextField from '@mui/material/TextField';
+import Slider from '@mui/material/Slider';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import TableSortLabel from '@mui/material/TableSortLabel';
+import IconButton from '@mui/material/IconButton';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { formatSemester } from '../utils/formatter';
 

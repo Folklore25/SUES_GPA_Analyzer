@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
 

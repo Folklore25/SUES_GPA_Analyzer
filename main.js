@@ -308,9 +308,14 @@ ipcMain.handle('save-user-info', async (event, userInfo) => {
       if (oldUsername) await keytar.deletePassword(SERVICE_NAME, oldUsername);
       await iniHelper.delete('user', 'username');
       await iniHelper.delete('user', 'url');
+      await iniHelper.delete('user', 'showTutorialDialog');
     } else {
       await iniHelper.set('user', 'username', userInfo.username);
       await iniHelper.set('user', 'url', userInfo.url || '');
+      // Save the showTutorialDialog preference
+      if (userInfo.showTutorialDialog !== undefined) {
+        await iniHelper.set('user', 'showTutorialDialog', userInfo.showTutorialDialog);
+      }
       await keytar.setPassword(SERVICE_NAME, userInfo.username, userInfo.password);
     }
     return { success: true };
@@ -326,7 +331,9 @@ ipcMain.handle('load-user-info', async () => {
     if (!username) return {};
     const password = await keytar.getPassword(SERVICE_NAME, username);
     const urlValue = await iniHelper.get('user', 'url', '');
-    return { username, password: password || '', url: urlValue };
+    // Load the showTutorialDialog preference
+    const showTutorialDialog = await iniHelper.get('user', 'showTutorialDialog', 'true');
+    return { username, password: password || '', url: urlValue, showTutorialDialog };
   } catch (error) {
     throw new Error('读取用户信息失败: ' + error.message);
   }
@@ -354,5 +361,17 @@ ipcMain.handle('delete-user-data', async () => {
   } catch (error) {
     console.error('删除用户数据时发生错误:', error);
     throw new Error('删除用户数据失败: ' + error.message);
+  }
+});
+
+// Handler for opening external URLs
+ipcMain.handle('open-external-url', async (event, url) => {
+  const { shell } = require('electron');
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    console.error('打开外部链接时发生错误:', error);
+    throw new Error('无法打开链接: ' + error.message);
   }
 });

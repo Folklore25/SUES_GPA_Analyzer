@@ -2,10 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { calculateCurrentGPA, getGpaTotalCredits } from '../utils/gpaCalculations';
 import { generateSchedule } from '../utils/scheduler';
 import ReactECharts from 'echarts-for-react';
-import { 
-  Button, Card, CardContent, Typography, Box, Paper, useTheme, Slider, 
-  ToggleButton, ToggleButtonGroup, Divider
-} from '@mui/material';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import { useTheme } from '@mui/material/styles';
+import Slider from '@mui/material/Slider';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Divider from '@mui/material/Divider';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 // Main component for the new Scheduling Workbench
