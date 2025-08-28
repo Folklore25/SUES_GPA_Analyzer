@@ -17,20 +17,26 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
   // Ref to track if a drag operation just finished
   const justDraggedRef = useRef(false);
+  // Ref to track if the window is being resized
+  const isResizingRef = useRef(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setPosition(prevPosition => {
-        const fabSizeWithPadding = 80; // FAB size (56px) + some padding
-        const newX = Math.min(prevPosition.x, window.innerWidth - fabSizeWithPadding);
-        const newY = Math.min(prevPosition.y, window.innerHeight - fabSizeWithPadding);
-        const finalX = Math.max(16, newX); // Keep some padding from left edge
-        const finalY = Math.max(16, newY); // Keep some padding from top edge
-        return { x: finalX, y: finalY };
+      isResizingRef.current = true;
+      // Reset to default position (bottom-right corner)
+      setPosition({ 
+        x: window.innerWidth - 80, 
+        y: window.innerHeight - 80 
       });
+      
+      // Reset the resizing flag after a short delay
+      setTimeout(() => {
+        isResizingRef.current = false;
+      }, 100);
     };
 
     window.addEventListener('resize', handleResize);
@@ -39,7 +45,7 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   const handleClick = (event) => {
     // If a drag operation just finished, prevent the click
@@ -60,6 +66,9 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
   };
 
   const handleMouseDown = (e) => {
+    // Don't start dragging if window is being resized
+    if (isResizingRef.current) return;
+    
     dragRef.current = {
       isDragging: false, // Initially not dragging
       offsetX: e.clientX - position.x,
@@ -78,6 +87,7 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
       const deltaY = Math.abs(e.clientY - dragRef.current.startY);
       if (deltaX > 3 || deltaY > 3) { // 3px threshold
          dragRef.current.isDragging = true;
+         setIsDragging(true);
          // Update cursor to indicate dragging
          if (e.target.closest('.MuiFab-root')) {
             e.target.closest('.MuiFab-root').style.cursor = 'grabbing';
@@ -100,6 +110,7 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
         // setTimeout(() => { justDraggedRef.current = false; }, 10);
      }
      dragRef.current.isDragging = false;
+     setIsDragging(false);
      const fabElement = e.target.closest('.MuiFab-root');
      if (fabElement) {
         fabElement.style.cursor = 'grab';

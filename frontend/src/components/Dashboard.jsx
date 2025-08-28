@@ -344,23 +344,57 @@ function Dashboard({ userCredentials, toggleTheme }) {
             flexDirection: 'column', 
             alignItems: 'center', 
             textAlign: 'center',
-            minHeight: 130,
+            minHeight: 150,
             justifyContent: 'center'
           }}>
-            <Typography 
-              variant="body1" 
-              color="text.primary" 
-              sx={{ 
-                mb: 1,
-                fontSize: '1.1rem',
-                fontWeight: 500,
-                whiteSpace: 'pre-line'
-              }} 
-            >
-              第一次使用？
-              {'\n'}请点击“查看教程”了解这个软件的所有功能！
-              
-            </Typography>
+            <Box sx={{ width: '100%', textAlign: 'left', pl: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 6, 
+                    height: 6, 
+                    borderRadius: '50%', 
+                    backgroundColor: 'primary.main', 
+                    mt: '0.7em',
+                    mr: 2,
+                    flexShrink: 0
+                  }} 
+                />
+                <Typography 
+                  variant="body1" 
+                  color="text.primary" 
+                  sx={{ 
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                  }} 
+                >
+                  第一次使用？请点击"查看教程"了解这个软件的所有功能！
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                <Box 
+                  sx={{ 
+                    width: 6, 
+                    height: 6, 
+                    borderRadius: '50%', 
+                    backgroundColor: 'primary.main', 
+                    mt: '0.7em',
+                    mr: 2,
+                    flexShrink: 0
+                  }} 
+                />
+                <Typography 
+                  variant="body1" 
+                  color="text.primary" 
+                  sx={{ 
+                    fontSize: '1.1rem',
+                    fontWeight: 500
+                  }} 
+                >
+                  您的所有数据均保存在本地，且不会被上传。若您想要删除数据，请点击右上角的"<Box component="span" color="error.main">删除我的数据</Box>"按钮。
+                </Typography>
+              </Box>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions sx={{ 
