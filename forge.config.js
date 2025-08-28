@@ -3,23 +3,17 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
-    asar: true,
-    extraResource: [
-      'node_modules/playwright-core/',
-    ],
-    // Files to unpack from the ASAR archive
-    asarUnpack: [
-      'src/crawler/crawler.js',
-      'src/crawler/config.json',
-      // Unpack Playwright browsers when ASAR is enabled
-      'node_modules/playwright-core/.local-browsers/**/*'
-    ]
+    asar: false,
   },
   rebuildConfig: {},
   makers: [
     {
+      name: '@electron-forge/maker-squirrel',
+      config: {},
+    },
+    {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin', 'win32'],
+      platforms: ['darwin'],
     },
     {
       name: '@electron-forge/maker-deb',

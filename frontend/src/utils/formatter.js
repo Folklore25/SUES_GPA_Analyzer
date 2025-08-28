@@ -3,7 +3,7 @@ const numberToChinese = (num) => {
   return map[num] || num;
 };
 
-export function formatSemester(semesterString) {// @Github:Folklore25
+export function formatSemester(semesterString) {
   if (!semesterString || typeof semesterString !== 'string') {
     return '--';
   }
@@ -12,10 +12,10 @@ export function formatSemester(semesterString) {// @Github:Folklore25
 
   return semesters.map(num => {
     if (isNaN(num) || num < 1) {
-      return '第二课堂选修'; // Handle invalid numbers// @Github:Folklore25
+      return '第二课堂选修'; // Handle invalid numbers
     }
     const year = Math.ceil(num / 2);
     const term = num % 2 === 1 ? '上' : '下';
-    return `大${numberToChinese(year)}${term}`;// @Github:Folklore25
+    return `大${numberToChinese(year)}${term}`;
   }).join(', ');
 }

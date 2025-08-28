@@ -2,56 +2,54 @@ const { app, BrowserWindow, ipcMain, Menu, dialog, utilityProcess } = require('e
 const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
-// IniHelper will be imported dynamically when needed
-// keytar will be imported dynamically when needed
+const IniHelper = require('./src/utils/iniHelper');
+const keytar = require('keytar');
 
-// @Github:Folklore25
-const SERVICE_NAME = 'SUES_GPA_Analyzer'; // @Github:Folklore25
+const SERVICE_NAME = 'SUES_GPA_Analyzer';
 
 // 保持对窗口对象的全局引用，如果不这么做，当JavaScript对象被垃圾回收时，窗口会自动关闭
-let mainWindow; // @Github:Folklore25
+let mainWindow;
 
 // --- Path Setup ---
 // Get the userData path once app is ready
-let userDataPath; // @Github:Folklore25
+let userDataPath;
 app.on('ready', () => {
-  userDataPath = app.getPath('userData'); // @Github:Folklore25
+  userDataPath = app.getPath('userData');
 });
 
 // Function to get IniHelper with the correct path
-async function getIniHelper() { // @Github:Folklore25
+function getIniHelper() {
   // Ensure userDataPath is available
-  if (!userDataPath) { // @Github:Folklore25
+  if (!userDataPath) {
     userDataPath = app.getPath('userData');
   }
-  const IniHelper = require('./src/utils/iniHelper');
-  return new IniHelper(path.join(userDataPath, 'user-info.ini')); // @Github:Folklore25
+  return new IniHelper(path.join(userDataPath, 'user-info.ini'));
 }
 
 function createWindow() {
   // 创建浏览器窗口
-  mainWindow = new BrowserWindow({ // @Github:Folklore25
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    webPreferences: { // @Github:Folklore25
+    webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'src/renderer/preload.js') // @Github:Folklore25
+      preload: path.join(__dirname, 'src/renderer/preload.js')
     }
   });
 
   // Remove the application menu
-  Menu.setApplicationMenu(null); // @Github:Folklore25
+  Menu.setApplicationMenu(null);
 
   // Load from Vite dev server in development, or from local file in production
-  if (!app.isPackaged) { // @Github:Folklore25
+  if (!app.isPackaged) {
     // Development: Load from Vite server
     mainWindow.loadURL('http://localhost:5173');
     // Automatically open DevTools for debugging
-    mainWindow.webContents.openDevTools(); // @Github:Folklore25
+    mainWindow.webContents.openDevTools();
   } else {
     // Production: Load from built file using file:// protocol
-    mainWindow.loadURL(url.format({ // @Github:Folklore25
+    mainWindow.loadURL(url.format({
       pathname: path.join(__dirname, 'frontend', 'dist', 'index.html'),
       protocol: 'file:',
       slashes: true
@@ -59,40 +57,38 @@ function createWindow() {
   }
 
   // 当窗口关闭时触发
-  mainWindow.on('closed', function () { // @Github:Folklore25
+  mainWindow.on('closed', function () {
     // 取消对窗口对象的引用
-    mainWindow = null; // @Github:Folklore25
+    mainWindow = null;
   });
 }
 
 // --- Data Migration ---
-async function migrateDataIfNeeded() { // @Github:Folklore25
+async function migrateDataIfNeeded() {
   const oldConfigPath = path.join(__dirname, 'user-info.ini');
 
   try {
-    await fs.access(oldConfigPath); // Check if old config exists // @Github:Folklore25
+    await fs.access(oldConfigPath); // Check if old config exists
     console.log('发现旧的配置文件，开始迁移...');
 
-    const IniHelper = require('./src/utils/iniHelper');
     const oldIniHelper = new IniHelper(oldConfigPath);
-    const username = await oldIniHelper.get('user', 'username', ''); // @Github:Folklore25
+    const username = await oldIniHelper.get('user', 'username', '');
     const password = await oldIniHelper.get('user', 'password', ''); // Plain text password
-    const urlValue = await oldIniHelper.get('user', 'url', ''); // @Github:Folklore25
+    const urlValue = await oldIniHelper.get('user', 'url', '');
 
-    if (username && password) { // @Github:Folklore25
-      const newIniHelper = await getIniHelper();
+    if (username && password) {
+      const newIniHelper = getIniHelper();
       await newIniHelper.set('user', 'username', username);
-      await newIniHelper.set('user', 'url', urlValue); // @Github:Folklore25
-      const keytar = require('keytar');
+      await newIniHelper.set('user', 'url', urlValue);
       await keytar.setPassword(SERVICE_NAME, username, password);
-      console.log(`用户 ${username} 的凭据已成功迁移。`); // @Github:Folklore25
+      console.log(`用户 ${username} 的凭据已成功迁移。`);
     }
 
     await fs.unlink(oldConfigPath);
-    console.log('旧的配置文件已被成功删除。'); // @Github:Folklore25
+    console.log('旧的配置文件已被成功删除。');
 
   } catch (error) {
-    if (error.code !== 'ENOENT') { // @Github:Folklore25
+    if (error.code !== 'ENOENT') {
       console.error('迁移旧配置文件时发生错误:', error);
     }
   }
@@ -100,20 +96,14 @@ async function migrateDataIfNeeded() { // @Github:Folklore25
 
 
 // Electron会在初始化后调用这个方法
-app.whenReady().then(async () => { // @Github:Folklore25
-  // Set PLAYWRIGHT_BROWSERS_PATH for packaged app
-  if (app.isPackaged) { // @Github:Folklore25
-    // When packaged with Electron Forge and extraResource, browsers are in 
-    // resources/playwright-core/.local-browsers
-    const path = require('path');
-    const browsersPath = path.join(process.resourcesPath, 'playwright-core', '.local-browsers'); // @Github:Folklore25
-    process.env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
-  }
-  
+app.whenReady().then(async () => {
   await migrateDataIfNeeded();
-  createWindow(); // @Github:Folklore25
+  createWindow();
+  
+  // Example: Trigger browser installation check after window is created
+
   app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow(); // @Github:Folklore25
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
@@ -122,52 +112,125 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Add a new IPC handler for checking and downloading browser
+// --- Browser Installation ---
+async function ensureBrowserInstalled() {
+  const browsersPath = path.join(app.getPath('userData'), 'pw-browsers');
+  let browserInstalled = false;
 
+  try {
+    const browserDirs = await fs.readdir(browsersPath);
+    for (const dir of browserDirs) {
+      if (dir.startsWith('chromium')) {
+        const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
+        await fs.access(exePath); // Check for executable existence
+        browserInstalled = true;
+        break;
+      }
+    }
+  } catch (error) {
+    browserInstalled = false; // Directory or executable not found
+  }
 
+  if (browserInstalled) {
+    console.log('Playwright browser is already installed.');
+    return browsersPath;
+  }
 
+  // Ensure mainWindow exists before attempting to send messages
+  if (!mainWindow) {
+     console.warn('Main window is not available to report browser download progress.');
+     // We could potentially wait for the window, but for now, let's proceed with installation
+     // and assume the UI will handle any state where progress isn't shown.
+     // A more robust solution might involve IPC from renderer to trigger this check post-load.
+  }
+
+  // Browser not found, proceed with installation
+  return new Promise((resolve, reject) => {
+    // Check again just before sending the initial message
+    if (mainWindow) {
+       mainWindow.webContents.send('browser-download-progress', { message: '首次运行，正在下载浏览器...', value: 0 });
+    }
+
+    const playwrightCliPath = path.join(__dirname, 'node_modules', 'playwright', 'cli.js');
+
+    const downloaderProcess = utilityProcess.fork(
+      playwrightCliPath,
+      ['install', 'chromium'],
+      {
+        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
+        cwd: app.getAppPath(),
+        serviceName: 'playwright-browser-installer',
+        stdio: 'pipe' // Explicitly set stdio to ensure streams are created
+      }
+    );
+
+    downloaderProcess.stdout.on('data', (data) => {
+      const output = data.toString();
+      console.log(`Playwright Installer: ${output}`); // Log for debugging
+
+      // Regex to parse the percentage from Playwright's output
+      const progressRegex = /(\d+)\%\s+of/;
+      const match = output.match(progressRegex);
+
+      if (match && match[1]) {
+        const progressValue = parseInt(match[1], 10);
+        let message = '正在下载依赖文件...';
+        if (output.includes('Chromium')) {
+          message = '正在下载 Chromium 浏览器...';
+        } else if (output.includes('FFMPEG')) {
+          message = '正在下载 FFMPEG (视频解码器)...';
+        }
+        // Only send progress updates if mainWindow exists
+        if (mainWindow) {
+           mainWindow.webContents.send('browser-download-progress', { message: message, value: progressValue });
+        }
+      }
+    });
+
+    downloaderProcess.stderr.on('data', (data) => {
+      console.error(`Playwright Installer Error: ${data.toString()}`);
+    });
+
+    downloaderProcess.on('exit', (code) => {
+      // Send final status update if mainWindow exists
+      if (mainWindow) {
+         if (code === 0) {
+            mainWindow.webContents.send('browser-download-progress', { message: '浏览器下载完成!', value: 100 });
+         } else {
+            const errorMessage = `浏览器下载失败，退出码: ${code}`;
+            mainWindow.webContents.send('browser-download-progress', { message: errorMessage, value: 0 });
+         }
+      }
+      if (code === 0) {
+        console.log('Playwright browser downloaded successfully.');
+        resolve(browsersPath);
+      } else {
+        const errorMessage = `浏览器下载失败，退出码: ${code}`;
+        reject(new Error(errorMessage));
+      }
+    });
+
+    downloaderProcess.on('error', (err) => {
+      console.error('Failed to start browser downloader process.', err);
+      reject(err);
+    });
+  });
+}
 
 
 // --- IPC Handlers ---
 
 ipcMain.handle('start-crawler', async (event, loginInfo) => {
   try {
-    // Determine the correct browsers path，it's installed in node_modules/playwright/.local-browsers by default
-    let browsersPath = path.join(__dirname, 'node_modules', 'playwright-core', '.local-browsers');
-    
-    // Check if PLAYWRIGHT_BROWSERS_PATH is already set in the environment and not '0'
-    if (process.env.PLAYWRIGHT_BROWSERS_PATH && process.env.PLAYWRIGHT_BROWSERS_PATH !== '0') {
-      browsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH;
-    }
-    // If PLAYWRIGHT_BROWSERS_PATH is '0', we keep the default browsersPath
-    
-    // Check if browser is installed
-    let browserInstalled = false;
-    try {
-      const browserDirs = await fs.readdir(browsersPath);
-      for (const dir of browserDirs) {
-        if (dir.startsWith('chromium')) {
-          const exePath = path.join(browsersPath, dir, 'chrome-win', 'chrome.exe');
-          await fs.access(exePath); // Check for executable existence
-          browserInstalled = true;
-          break;
-        }
-      }
-    } catch (error) {
-      browserInstalled = false; // Directory or executable not found
-    }
+    const browsersPath = await ensureBrowserInstalled();
 
     return new Promise((resolve, reject) => {
       let settled = false;
 
-      // When packaged in asar, we need to extract the path correctly
-      const isProduction = app.isPackaged;
-      const crawlerPath = isProduction 
-        ? path.join(app.getAppPath(), 'src', 'crawler', 'crawler.js')// @Github:Folklore25
-        : path.join(__dirname, 'src', 'crawler', 'crawler.js');
+      const crawlerPath = path.join(__dirname, 'src', 'crawler', 'crawler.js');
 
       // Create a message channel for communication
-      const { MessageChannelMain } = require('electron');// @Github:Folklore25
+      const { MessageChannelMain } = require('electron');
       const { port1, port2 } = new MessageChannelMain();
       
       // Listen for messages from the child process
@@ -185,34 +248,10 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
 
       port1.start(); // Start listening for messages
 
-      // Handle PLAYWRIGHT_BROWSERS_PATH environment variable
-      const env = { 
-        ...process.env, 
-        NODE_ENV: app.isPackaged ? 'production' : 'development'// @Github:Folklore25
-      };
-      
-      // Only set PLAYWRIGHT_BROWSERS_PATH if it's not "0"
-      if (browsersPath !== '0') {
-        env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
-      }
-      // If browsersPath is "0", we don't set it at all, letting Playwright use default behavior
-
       const crawlerProcess = utilityProcess.fork(crawlerPath, [], {
-        env: env,
+        env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersPath },
         serviceName: 'sues-gpa-crawler',
         stdio: 'pipe' // Ensure stdio streams are piped
-      });
-
-      // Add error logging for debugging
-      crawlerProcess.on('error', (error) => {
-        console.error('爬虫进程启动失败:', error);
-        if (settled) return;
-        settled = true;
-        reject(new Error(`爬虫进程启动失败: ${error.message}`));
-      });
-
-      crawlerProcess.on('spawn', () => {
-        console.log('爬虫进程已成功启动');
       });
 
       crawlerProcess.on('error', (error) => {
@@ -228,7 +267,7 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         if (code !== 0) {
           reject(new Error(`爬虫进程意外退出，退出码: ${code}`));
         } else {
-          reject(new Error('爬虫进程已结束，但未返回有效数据。'));// @Github:Folklore25
+          reject(new Error('爬虫进程已结束，但未返回有效数据。'));
         }
       });
 
@@ -241,24 +280,8 @@ ipcMain.handle('start-crawler', async (event, loginInfo) => {
         data: { loginInfo: loginInfo, userDataPath: app.getPath('userData') }
       });
 
-      // Capture stdout and stderr for debugging
-      crawlerProcess.stdout.on('data', (data) => {
-        const output = data.toString();
-        console.log(`Crawler stdout: ${output}`);
-        // If we get an error message, we might want to report it
-        if (output.toLowerCase().includes('error') || output.toLowerCase().includes('exception')) {
-          console.error('Crawler error in stdout:', output);
-        }
-      });
-      
-      crawlerProcess.stderr.on('data', (data) => {
-        const output = data.toString();
-        console.error(`Crawler stderr: ${output}`);
-        // Forward error messages to the renderer if needed
-        if (mainWindow && mainWindow.webContents) {
-          mainWindow.webContents.send('crawler-error', output);
-        }
-      });
+      crawlerProcess.stdout.on('data', (data) => console.log(`Crawler stdout: ${data}`));
+      crawlerProcess.stderr.on('data', (data) => console.error(`Crawler stderr: ${data}`));
     });
   } catch (error) {
     console.error("爬虫启动流程失败:", error);
@@ -278,18 +301,16 @@ ipcMain.handle('load-course-data', async () => {
 });
 
 ipcMain.handle('save-user-info', async (event, userInfo) => {
-  const iniHelper = await getIniHelper();
+  const iniHelper = getIniHelper();
   try {
     if (Object.keys(userInfo).length === 0 || !userInfo.username) {
       const oldUsername = await iniHelper.get('user', 'username', '');
-      const keytar = require('keytar');// @Github:Folklore25
       if (oldUsername) await keytar.deletePassword(SERVICE_NAME, oldUsername);
       await iniHelper.delete('user', 'username');
       await iniHelper.delete('user', 'url');
     } else {
       await iniHelper.set('user', 'username', userInfo.username);
       await iniHelper.set('user', 'url', userInfo.url || '');
-      const keytar = require('keytar');
       await keytar.setPassword(SERVICE_NAME, userInfo.username, userInfo.password);
     }
     return { success: true };
@@ -299,11 +320,10 @@ ipcMain.handle('save-user-info', async (event, userInfo) => {
 });
 
 ipcMain.handle('load-user-info', async () => {
-  const iniHelper = await getIniHelper();
+  const iniHelper = getIniHelper();
   try {
     const username = await iniHelper.get('user', 'username', '');
     if (!username) return {};
-    const keytar = require('keytar');
     const password = await keytar.getPassword(SERVICE_NAME, username);
     const urlValue = await iniHelper.get('user', 'url', '');
     return { username, password: password || '', url: urlValue };
@@ -316,7 +336,7 @@ ipcMain.handle('load-user-info', async () => {
 
 
 ipcMain.handle('delete-user-data', async () => {
-  const iniHelper = await getIniHelper();
+  const iniHelper = getIniHelper();
   const username = await iniHelper.get('user', 'username', '');
   const userData = app.getPath('userData');
   const coursesPath = path.join(userData, 'courses.csv');
@@ -325,7 +345,6 @@ ipcMain.handle('delete-user-data', async () => {
   try {
     // Delete password from keychain
     if (username) {
-      const keytar = require('keytar');
       await keytar.deletePassword(SERVICE_NAME, username);
     }
     // Delete files
@@ -333,9 +352,7 @@ ipcMain.handle('delete-user-data', async () => {
     await fs.unlink(iniPath).catch(err => { if (err.code !== 'ENOENT') throw err; });
     return { success: true };
   } catch (error) {
-    console.error('删除用户数据时发生错误:', error);// @Github:Folklore25
+    console.error('删除用户数据时发生错误:', error);
     throw new Error('删除用户数据失败: ' + error.message);
   }
 });
-
-

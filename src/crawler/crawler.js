@@ -1,33 +1,8 @@
-// These modules will be imported dynamically when needed
-// const { chromium } = require('playwright');
+const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
-// const { JSDOM } = require('jsdom');
-
-// Log the current working directory and filename for debugging
-console.log('爬虫脚本启动');
-console.log('当前工作目录:', process.cwd());
-console.log('脚本文件路径:', __filename);
-console.log('脚本目录路径:', __dirname);
-
-// Handle config path differently when packaged in asar
-const isProduction = process.env.NODE_ENV === 'production';
-console.log('运行环境:', isProduction ? 'production' : 'development');
-
-// When packaged in ASAR, we need to look for config.json in the same directory as the script
-const configPath = path.join(__dirname, 'config.json');
-  
-console.log('配置文件路径:', configPath);
-
-// Check if config file exists
-try {
-  const configStats = fs.statSync(configPath);
-  console.log('配置文件存在，大小:', configStats.size, '字节');
-} catch (err) {
-  console.error('配置文件不存在或无法访问:', err.message);
-}
-
-const config = require(configPath);
+const { JSDOM } = require('jsdom');
+const config = require('./config.json');
 
 let parentPort = null;
 
@@ -102,8 +77,6 @@ async function saveToCSV(data, filePath) {
       return false;
     }
 
-    const fs = require('fs').promises;
-
     // CSV头部
     const headers = [
       'course_name',
@@ -155,29 +128,6 @@ class CoursesScraper {
   async setupBrowser() {
     try {
       sendMessage('progress', { message: '正在启动浏览器...' });
-      console.log('浏览器配置:', config.browser);
-      
-      // 检查并处理PLAYWRIGHT_BROWSERS_PATH环境变量
-      if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
-        if (process.env.PLAYWRIGHT_BROWSERS_PATH === '0') {
-          console.log('PLAYWRIGHT_BROWSERS_PATH被设置为"0"，将使用默认路径');
-          // 删除环境变量，让Playwright使用默认行为
-          delete process.env.PLAYWRIGHT_BROWSERS_PATH;// @Github:Folklore25
-        } else {
-          console.log('Playwright浏览器路径:', process.env.PLAYWRIGHT_BROWSERS_PATH);
-          // 验证路径是否存在
-          try {
-            await fs.access(process.env.PLAYWRIGHT_BROWSERS_PATH);
-            console.log('Playwright浏览器路径存在');
-          } catch (err) {
-            console.log('Playwright浏览器路径不存在:', err.message);
-          }
-        }
-      } else {
-        console.log('PLAYWRIGHT_BROWSERS_PATH环境变量未设置，将使用默认路径');
-      }
-      
-      const { chromium } = require('playwright');
       this.browser = await chromium.launch({
         headless: config.browser.headless,
         args: config.browser.args
@@ -185,7 +135,7 @@ class CoursesScraper {
       
       this.context = await this.browser.newContext();
       this.page = await this.context.newPage();
-      sendMessage('progress', { message: '浏览器启动成功' });// @Github:Folklore25
+      sendMessage('progress', { message: '浏览器启动成功' });
     } catch (error) {
       console.error('设置浏览器失败:', error);
       throw error;
@@ -201,7 +151,7 @@ class CoursesScraper {
       await this.page.fill("//input[@id='username']", this.username);
       // 输入密码
       await this.page.fill("//input[@id='password']", this.password);
-      // 点击登录按钮// @Github:Folklore25
+      // 点击登录按钮
       await this.page.click("//input[@id='passbutton']");
       
       // 等待跳转
@@ -209,14 +159,14 @@ class CoursesScraper {
       sendMessage('progress', { message: '第一次登录完成' });
       return true;
     } catch (error) {
-      console.error('第一次登录失败:', error);// @Github:Folklore25
+      console.error('第一次登录失败:', error);
       return false;
     }
   }
 
   async performSecondLogin() {
     try {
-      sendMessage('progress', { message: '开始第二次登录...' });// @Github:Folklore25
+      sendMessage('progress', { message: '开始第二次登录...' });
       
       // 输入用户名
       await this.page.fill("//input[@placeholder='用户名']", this.username);
@@ -232,7 +182,7 @@ class CoursesScraper {
       console.error('第二次登录失败:', error);
       return false;
     }
-  }// @Github:Folklore25
+  }
 
   async findAndSwitchToFrame() {
     try {
@@ -255,7 +205,7 @@ class CoursesScraper {
     } catch (error) {
       console.error('查找iframe失败:', error);
       return false;
-    }// @Github:Folklore25
+    }
   }
 
   async getCourseTableContent() {
@@ -273,7 +223,7 @@ class CoursesScraper {
       sendMessage('progress', { message: '成功获取课程表内容' });
       return content;
     } catch (error) {
-      console.error('获取课程表失败:', error);// @Github:Folklore25
+      console.error('获取课程表失败:', error);
       return null;
     }
   }
@@ -299,12 +249,11 @@ class CoursesScraper {
       const coursesData = [];
       if (tableHtml) {
         // 使用JSDOM解析HTML
-        const { JSDOM } = require('jsdom');
         const dom = new JSDOM(tableHtml);
         const doc = dom.window.document;
         
         // 查找所有包含课程数据的行
-        const courseRows = doc.querySelectorAll('tr[data-result]');// @Github:Folklore25
+        const courseRows = doc.querySelectorAll('tr[data-result]');
         
         // 解析每一行数据
         for (const row of courseRows) {
@@ -336,7 +285,7 @@ class CoursesScraper {
   async close() {
     if (this.browser) {
       await this.browser.close();
-    }// @Github:Folklore25
+    }
   }
 }
 
@@ -350,10 +299,8 @@ process.parentPort.on('message', async (e) => {
   if (message.type === 'init') {
     // Store the port for communication
     parentPort = e.ports[0];
-    console.log('爬虫进程已初始化');
   } else if (message.type === 'start') {
     try {
-      console.log('开始执行爬虫任务');
       // Store the userDataPath and get loginInfo from the new data structure
       userDataPath = message.data.userDataPath;
       const scraper = new CoursesScraper(message.data.loginInfo);
@@ -362,8 +309,6 @@ process.parentPort.on('message', async (e) => {
       const coursesData = await scraper.scrapeCourses();
       await scraper.close();
       
-      console.log(`爬虫任务完成，共获取到 ${coursesData.length} 条数据`);
-      
       // 发送完成消息
       sendMessage('complete', { 
         success: true, 
@@ -371,11 +316,10 @@ process.parentPort.on('message', async (e) => {
         message: '数据获取完成' 
       });
     } catch (error) {
-      console.error('爬虫执行过程中发生错误:', error);
       // 发送错误消息
       sendMessage('error', { 
         success: false, 
-        message: error.message // @Github:Folklore25
+        message: error.message 
       });
     }
   }
@@ -386,7 +330,7 @@ process.parentPort.start();
 
 // 错误处理
 process.on('uncaughtException', (error) => {
-  console.error('爬虫进程中未捕获的异常:', error);
+  console.error('未捕获的异常:', error);
   sendMessage('error', { 
     success: false, 
     message: `未捕获的异常: ${error.message}` 
@@ -394,7 +338,7 @@ process.on('uncaughtException', (error) => {
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('爬虫进程中未处理的Promise拒绝:', reason);
+  console.error('未处理的Promise拒绝:', reason);
   sendMessage('error', {
     success: false,
     message: `未处理的Promise拒绝: ${reason}`

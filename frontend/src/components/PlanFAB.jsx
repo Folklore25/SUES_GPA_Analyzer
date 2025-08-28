@@ -10,6 +10,8 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
   const dragRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+  // Ref to track if a drag operation just finished
+  const justDraggedRef = useRef(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,7 +34,17 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
   }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    // If a drag operation just finished, prevent the click
+    if (justDraggedRef.current) {
+       justDraggedRef.current = false; // Reset the flag
+       event.preventDefault();
+       event.stopPropagation();
+       return;
+    }
+    // Only trigger click if not dragging
+    if (!dragRef.current.isDragging) {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
   const handleClose = () => {
@@ -41,26 +53,51 @@ function PlanFAB({ retakePlan, onRemoveFromPlan, onNavigateToPlanner }) {
 
   const handleMouseDown = (e) => {
     dragRef.current = {
-      isDragging: true,
+      isDragging: false, // Initially not dragging
       offsetX: e.clientX - position.x,
       offsetY: e.clientY - position.y,
+      startX: e.clientX, // Record starting position
+      startY: e.clientY,
     };
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
 
   const handleMouseMove = (e) => {
-    if (!dragRef.current.isDragging) return;
+    if (!dragRef.current.isDragging) {
+      // Check if movement exceeds a threshold to start dragging
+      const deltaX = Math.abs(e.clientX - dragRef.current.startX);
+      const deltaY = Math.abs(e.clientY - dragRef.current.startY);
+      if (deltaX > 3 || deltaY > 3) { // 3px threshold
+         dragRef.current.isDragging = true;
+         // Update cursor to indicate dragging
+         if (e.target.closest('.MuiFab-root')) {
+            e.target.closest('.MuiFab-root').style.cursor = 'grabbing';
+         }
+      } else {
+         return; // Don't update position yet
+      }
+    }
     setPosition({
       x: e.clientX - dragRef.current.offsetX,
       y: e.clientY - dragRef.current.offsetY,
     });
   };
 
-  const handleMouseUp = () => {
-    dragRef.current.isDragging = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+  const handleMouseUp = (e) => {
+     // Reset dragging state and cursor
+     if (dragRef.current.isDragging) {
+        justDraggedRef.current = true; // Set flag if dragging occurred
+        // Optional: Add a small delay to reset the flag, just to be safe
+        // setTimeout(() => { justDraggedRef.current = false; }, 10);
+     }
+     dragRef.current.isDragging = false;
+     const fabElement = e.target.closest('.MuiFab-root');
+     if (fabElement) {
+        fabElement.style.cursor = 'grab';
+     }
+     document.removeEventListener('mousemove', handleMouseMove);
+     document.removeEventListener('mouseup', handleMouseUp);
   };
 
   const open = Boolean(anchorEl);

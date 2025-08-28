@@ -8,4 +8,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveUserInfo: (userInfo) => ipcRenderer.invoke('save-user-info', userInfo),
   loadUserInfo: () => ipcRenderer.invoke('load-user-info'),
   deleteUserData: () => ipcRenderer.invoke('delete-user-data'),
+
+  onBrowserDownloadProgress: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on('browser-download-progress', subscription);
+    return () => ipcRenderer.removeListener('browser-download-progress', subscription);
+  },
 });

@@ -7,7 +7,7 @@ import {
   Card, 
   CardContent, 
   Typography, 
-  Box
+  Box 
 } from '@mui/material';
 
 function Login({ onLoginSuccess }) {
@@ -40,7 +40,6 @@ function Login({ onLoginSuccess }) {
     setError('');
 
     try {
-      // Save user info and proceed to dashboard
       if (rememberMe) {
         await window.electronAPI.saveUserInfo({ username, password, url });
       } else {
@@ -50,8 +49,8 @@ function Login({ onLoginSuccess }) {
       onLoginSuccess({ username, password, url });
 
     } catch (err) {
-      console.error('Login failed:', err);
-      setError(err.message || '登录时发生错误。');
+      console.error('Failed to save user info:', err);
+      setError(err.message || '保存用户信息时发生错误。');
     }
   };
 

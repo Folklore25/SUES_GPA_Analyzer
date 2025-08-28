@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { parseCSV } from '../utils/csvParser';
 import { 
   Box, Button, IconButton, Typography, Container, Paper, CircularProgress, Grid, 
@@ -15,12 +15,11 @@ import InfoIcon from '@mui/icons-material/Info';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import EmailIcon from '@mui/icons-material/Email';
 import { calculateCurrentGPA } from '../utils/gpaCalculations';
-
-// Dynamic imports for components
-const CourseList = lazy(() => import('./CourseList'));
-const Charts = lazy(() => import('./Charts'));
-const RetakePlanner = lazy(() => import('./RetakePlanner'));
-const PlanFAB = lazy(() => import('./PlanFAB'));
+import CourseList from './CourseList';
+import Charts from './Charts';
+import RetakePlanner from './RetakePlanner';
+import DownloadProgress from './DownloadProgress';
+import PlanFAB from './PlanFAB'; // Import the new component
 
 function StatCard({ title, value, icon }) {
   return (
@@ -45,6 +44,10 @@ function Dashboard({ userCredentials, toggleTheme }) {
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isAboutDialogOpen, setAboutDialogOpen] = useState(false);
   const theme = useTheme();
+
+  // State for download progress dialog
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadInfo, setDownloadInfo] = useState({});
 
   // State for the global retake plan
   const [retakePlan, setRetakePlan] = useState([]);
@@ -74,12 +77,37 @@ function Dashboard({ userCredentials, toggleTheme }) {
       }
     };
     initialLoad();
+
+    // Set up listener for browser download progress
+    const unsubscribe = window.electronAPI.onBrowserDownloadProgress((data) => {
+      console.log('Browser download progress update:', data);
+      // As soon as download starts, take over the loading state from the button
+      setIsLoading(false);
+      setIsDownloading(true);
+      setDownloadInfo({ message: data.message, progress: data.value });
+
+      // When download is complete, wait 2 seconds then close the dialog
+      if (data.value === 100) {
+        setTimeout(() => {
+          setIsDownloading(false);
+        }, 2000);
+      }
+    });
+
+    // Cleanup listener on component unmount
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+
   }, []);
 
   const handleGetData = async () => {
     setIsLoading(true);
     setError('');
-    
+    setDownloadInfo({});
+    // Let the listener control the download dialog visibility
+    // setIsDownloading(false); 
+
     try {
       const result = await window.electronAPI.startCrawler(userCredentials);
       if (result.success) {
@@ -92,6 +120,8 @@ function Dashboard({ userCredentials, toggleTheme }) {
     } catch (err) {
       console.error("Failed to get course data:", err);
       setError(err.message || '获取或解析课程数据时出错。');
+      // If an error occurs, ensure the download dialog is closed
+      setIsDownloading(false);
     } finally {
       setIsLoading(false);
     }
@@ -127,14 +157,6 @@ function Dashboard({ userCredentials, toggleTheme }) {
     setActiveTab(2); // 2 is the index for RetakePlanner tab
   };
 
-  // Loading fallback component
-  const LoadingFallback = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <CircularProgress />
-      <Typography sx={{ ml: 2 }}>检查本地数据中...</Typography>
-    </Box>
-  );
-
   if (isInitialLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -150,7 +172,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
         <Typography variant="h6" sx={{ ml: 2 }}>仪表盘</Typography>
         <Box>
           <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
-          <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
+          <Button onClick={handleGetData} disabled={isLoading || isDownloading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit"><Brightness7Icon /></IconButton>
           <IconButton sx={{ ml: 1 }} onClick={() => setAboutDialogOpen(true)} color="inherit"><InfoIcon /></IconButton>
         </Box>
@@ -176,25 +198,19 @@ function Dashboard({ userCredentials, toggleTheme }) {
             </Tabs>
           </Box>
           <Box sx={{ p: 3 }}>
-            {!courseData && <Typography>暂无数据，请点击"获取/刷新数据"按钮。</Typography>}
-            {courseData && activeTab === 0 && (
-              <Suspense fallback={<LoadingFallback />}>
-                <Charts courseData={courseData} />
-              </Suspense>
-            )}
-            {courseData && activeTab === 1 && (
-              <Suspense fallback={<LoadingFallback />}>
-                <CourseList courseData={courseData} retakePlan={retakePlan} onAddToPlan={handleAddToPlan} />
-              </Suspense>
-            )}
-            {courseData && activeTab === 2 && (
-              <Suspense fallback={<LoadingFallback />}>
-                <RetakePlanner courseData={courseData} retakePlan={retakePlan} onRemoveFromPlan={handleRemoveFromPlan} />
-              </Suspense>
-            )}
+            {!courseData && <Typography>暂无数据，请点击“获取/刷新数据”按钮。</Typography>}
+            {courseData && activeTab === 0 && <Charts courseData={courseData} />}
+            {courseData && activeTab === 1 && <CourseList courseData={courseData} retakePlan={retakePlan} onAddToPlan={handleAddToPlan} />}
+            {courseData && activeTab === 2 && <RetakePlanner courseData={courseData} retakePlan={retakePlan} onRemoveFromPlan={handleRemoveFromPlan} />}
           </Box>
         </Paper>
       </Container>
+
+      <DownloadProgress 
+        open={isDownloading} 
+        message={downloadInfo.message}
+        progress={downloadInfo.progress} 
+      />
 
       <Dialog
         open={isConfirmDialogOpen}
@@ -246,13 +262,11 @@ function Dashboard({ userCredentials, toggleTheme }) {
         </DialogActions>
       </Dialog>
 
-      <Suspense fallback={null}>
-        <PlanFAB 
-          retakePlan={retakePlan} 
-          onRemoveFromPlan={handleRemoveFromPlan} 
-          onNavigateToPlanner={handleNavigateToPlanner} 
-        />
-      </Suspense>
+      <PlanFAB 
+        retakePlan={retakePlan} 
+        onRemoveFromPlan={handleRemoveFromPlan} 
+        onNavigateToPlanner={handleNavigateToPlanner} 
+      />
     </Box>
   );
 }
