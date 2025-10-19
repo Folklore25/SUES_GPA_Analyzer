@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog, utilityProcess } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
@@ -103,6 +104,29 @@ async function migrateDataIfNeeded() {
 app.whenReady().then(async () => {
   await migrateDataIfNeeded();
   createWindow();
+
+  // Auto-updater
+  autoUpdater.checkForUpdatesAndNotify();
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow.webContents.send('update-available', info);
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    mainWindow.webContents.send('update-not-available');
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    mainWindow.webContents.send('download-progress', progressObj);
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow.webContents.send('update-downloaded');
+  });
+
+  autoUpdater.on('error', (err) => {
+    mainWindow.webContents.send('update-error', err);
+  });
   
   // Removed browser installation check
 
@@ -269,4 +293,18 @@ ipcMain.handle('open-external-url', async (event, url) => {
     console.error('打开外部链接时发生错误:', error);
     throw new Error('无法打开链接: ' + error.message);
   }
+});
+
+// --- Updater IPC Handlers ---
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('manual-check-for-updates', () => {
+  autoUpdater.checkForUpdates();
+});
+
+ipcMain.handle('restart-and-install', () => {
+  autoUpdater.quitAndInstall();
 });

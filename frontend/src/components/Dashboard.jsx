@@ -28,6 +28,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import InfoIcon from '@mui/icons-material/Info';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { calculateCurrentGPA } from '../utils/gpaCalculations';
 import CourseList from './CourseList';
 import Charts from './Charts';
@@ -48,7 +49,7 @@ function StatCard({ title, value, icon }) {
   );
 }
 
-function Dashboard({ userCredentials, toggleTheme }) {
+function Dashboard({ userCredentials, toggleTheme, navigateTo }) {
   const [courseData, setCourseData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -116,7 +117,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
       window.location.reload();
     } catch (err) {
       console.error("Failed to delete data:", err);
-      setError(err.message || '删除数据时出错。');
+      setError(err.message || '删除数据时出错。IENTS');
     }
   };
 
@@ -156,6 +157,7 @@ function Dashboard({ userCredentials, toggleTheme }) {
           <Button onClick={() => setConfirmDialogOpen(true)} color="error" size="small" sx={{ mr: 1 }}>删除我的数据</Button>
           <Button onClick={handleGetData} disabled={isLoading} variant="outlined" size="small">{isLoading ? '加载中...' : '获取/刷新数据'}</Button>
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit"><Brightness7Icon /></IconButton>
+          <IconButton sx={{ ml: 1 }} onClick={() => navigateTo('settings')} color="inherit"><SettingsIcon /></IconButton>
           <IconButton sx={{ ml: 1 }} onClick={() => setAboutDialogOpen(true)} color="inherit"><InfoIcon /></IconButton>
         </Box>
       </Paper>

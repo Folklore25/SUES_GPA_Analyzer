@@ -135,16 +135,24 @@ function Login({ onLoginSuccess }) {
               required
               sx={{ animation: 'fadeIn 0.6s ease-in-out', animationFillMode: 'forwards', animationDelay: '0.3s', opacity: 0 }}
             />
-            <TextField
-              label="培养方案URL"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              required
-              sx={{ animation: 'fadeIn 0.6s ease-in-out', animationFillMode: 'forwards', animationDelay: '0.4s', opacity: 0 }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, animation: 'fadeIn 0.6s ease-in-out', animationFillMode: 'forwards', animationDelay: '0.4s', opacity: 0 }}>
+              <TextField
+                label="培养方案URL"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+              />
+              <Button
+                variant="contained"
+                onClick={() => window.electronAPI.openExternalUrl('https://webvpn.sues.edu.cn/03b/student/home')}
+                sx={{ height: '56px', mt: '8px', mb: '4px' }}
+              >
+                点我获取
+              </Button>
+            </Box>
             <FormControlLabel
               control={
                 <Checkbox 

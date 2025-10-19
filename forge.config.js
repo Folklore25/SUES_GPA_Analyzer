@@ -50,7 +50,34 @@ module.exports = {
     }
   },
   rebuildConfig: {},
-  makers: [],
+  makers: [
+    {
+      name: '@electron-forge/maker-squirrel',
+      config: {
+        // An URL to an ICO file to use as the application icon (displayed in Control Panel)
+        iconUrl: 'https://raw.githubusercontent.com/Folklore25/sues-gpa-analyzer/main/logo.ico',
+        // The ICO file to use as the icon for the generated Setup.exe
+        setupIcon: './logo.ico'
+      }
+    },
+    {
+      name: '@electron-forge/maker-zip',
+      platforms: ['darwin']
+    }
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'Folklore25',
+          name: 'sues-gpa-analyzer'
+        },
+        prerelease: false,
+        draft: false
+      }
+    }
+  ],
   plugins: [
     {
       name: '@electron-forge/plugin-auto-unpack-natives',

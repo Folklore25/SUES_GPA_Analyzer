@@ -6,6 +6,8 @@ import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
+import Settings from './components/Settings';
+
 const animationStyles = (
   <GlobalStyles styles={`
     @keyframes fadeIn {
@@ -25,6 +27,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [credentials, setCredentials] = useState({ username: '', password: '', url: '' });
   const [themeMode, setThemeMode] = useState('light'); // Default to light mode
+  const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard' or 'settings'
 
   const theme = useMemo(
     () => {
@@ -90,16 +93,31 @@ function App() {
     setThemeMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPage = () => {
+    if (!isLoggedIn) {
+      return <Login onLoginSuccess={handleLoginSuccess} />;
+    }
+
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard userCredentials={credentials} toggleTheme={toggleTheme} navigateTo={navigateTo} />;
+      case 'settings':
+        return <Settings navigateTo={navigateTo} />;
+      default:
+        return <Dashboard userCredentials={credentials} toggleTheme={toggleTheme} navigateTo={navigateTo} />;
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {animationStyles}
       <main>
-        {isLoggedIn ? (
-          <Dashboard userCredentials={credentials} toggleTheme={toggleTheme} />
-        ) : (
-          <Login onLoginSuccess={handleLoginSuccess} />
-        )}
+        {renderPage()}
       </main>
     </ThemeProvider>
   );
