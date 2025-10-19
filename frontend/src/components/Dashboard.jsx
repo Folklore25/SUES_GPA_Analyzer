@@ -166,10 +166,10 @@ function Dashboard({ userCredentials, toggleTheme, navigateTo }) {
         {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
         {summaryStats && (
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}><StatCard title="当前加权GPA" value={summaryStats.currentGPA.toFixed(2)} icon={<SchoolIcon color="primary" sx={{ fontSize: 40 }} />} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><StatCard title="已修总学分" value={summaryStats.totalCredits} icon={<StarIcon color="primary" sx={{ fontSize: 40 }} />} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><StatCard title="已通过课程" value={`${summaryStats.passedCount} 门`} icon={<CheckCircleIcon color="success" sx={{ fontSize: 40 }} />} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><StatCard title="已挂科课程" value={`${summaryStats.failedCount} 门`} icon={<CancelIcon color="error" sx={{ fontSize: 40 }} />} /></Grid>
+            <Grid xs={12} sm={6} md={3}><StatCard title="当前加权GPA" value={summaryStats.currentGPA.toFixed(2)} icon={<SchoolIcon color="primary" sx={{ fontSize: 40 }} />} /></Grid>
+            <Grid xs={12} sm={6} md={3}><StatCard title="已修总学分" value={summaryStats.totalCredits} icon={<StarIcon color="primary" sx={{ fontSize: 40 }} />} /></Grid>
+            <Grid xs={12} sm={6} md={3}><StatCard title="已通过课程" value={`${summaryStats.passedCount} 门`} icon={<CheckCircleIcon color="success" sx={{ fontSize: 40 }} />} /></Grid>
+            <Grid xs={12} sm={6} md={3}><StatCard title="已挂科课程" value={`${summaryStats.failedCount} 门`} icon={<CancelIcon color="error" sx={{ fontSize: 40 }} />} /></Grid>
           </Grid>
         )}
 

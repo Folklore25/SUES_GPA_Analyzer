@@ -1,0 +1,26 @@
+[
+  {
+    "id": "glm-4.5-flash",
+    "name": "Zhipu GLM-4.5-Flash (免费版)",
+    "provider": "Zhipu",
+    "apiUrl": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+    "apiKeyService": "default",
+    "type": "freemium"
+  },
+  {
+    "id": "glm-4",
+    "name": "Zhipu GLM-4",
+    "provider": "Zhipu",
+    "apiUrl": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+    "apiKeyService": "SUES_GPA_Analyzer_Zhipu_AI",
+    "type": "user"
+  },
+  {
+    "id": "deepseek-chat",
+    "name": "DeepSeek Chat",
+    "provider": "DeepSeek",
+    "apiUrl": "https://api.deepseek.com/chat/completions",
+    "apiKeyService": "SUES_GPA_Analyzer_DeepSeek_AI",
+    "type": "user"
+  }
+]

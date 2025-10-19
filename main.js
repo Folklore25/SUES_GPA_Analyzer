@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const IniHelper = require('./src/utils/iniHelper');
 const keytar = require('keytar');
+const { getAIRetakePlan } = require('./src/utils/aiService');
+const aiModels = require('./src/utils/aiModels.json');
 
 // Handle path for packaged app
 const isDev = !app.isPackaged;
@@ -307,4 +309,122 @@ ipcMain.handle('manual-check-for-updates', () => {
 
 ipcMain.handle('restart-and-install', () => {
   autoUpdater.quitAndInstall();
+});
+
+// --- AI Planner IPC Handlers ---
+
+async function getAiCallCount() {
+  try {
+    const iniHelper = getIniHelper();
+    const count = await iniHelper.get('usage', 'aiCallCount', '0');
+    return parseInt(count, 10);
+  } catch (error) {
+    return 0;
+  }
+}
+
+async function incrementAiCallCount() {
+  try {
+    const iniHelper = getIniHelper();
+    const currentCount = await getAiCallCount();
+    await iniHelper.set('usage', 'aiCallCount', (currentCount + 1).toString());
+  } catch (error) {
+    console.error('增加AI调用计数失败:', error);
+  }
+}
+
+ipcMain.handle('save-api-key', async (event, { apiKey, serviceName }) => {
+  try {
+    const iniHelper = getIniHelper();
+    const username = await iniHelper.get('user', 'username', '');
+    if (!username) {
+      throw new Error('无法保存API密钥，因为没有找到用户信息。');
+    }
+    if (!serviceName) {
+      throw new Error('无法保存API密钥，因为缺少服务名称。');
+    }
+    await keytar.setPassword(serviceName, username, apiKey);
+    return { success: true };
+  } catch (error) {
+    throw new Error('保存API密钥失败: ' + error.message);
+  }
+});
+
+ipcMain.handle('load-api-key', async (event, serviceName) => {
+  try {
+    const iniHelper = getIniHelper();
+    const username = await iniHelper.get('user', 'username', '');
+    if (!username || !serviceName) {
+      return ''; // No user or service name, no key
+    }
+    const apiKey = await keytar.getPassword(serviceName, username);
+    return apiKey || '';
+  } catch (error) {
+    throw new Error('读取API密钥失败: ' + error.message);
+  }
+});
+
+ipcMain.on('start-ai-planner', async (event, { coursesData, modelId }) => {
+  const iniHelper = getIniHelper();
+  const username = await iniHelper.get('user', 'username', '');
+
+  try {
+    const modelConfig = aiModels.find(m => m.id === modelId);
+    if (modelConfig && modelConfig.type === 'freemium') {
+      const count = await getAiCallCount();
+      if (count >= 200) {
+        throw new Error('免费调用次数已用完。请在设置中配置您自己的API Key并选择其他模型。');
+      }
+    }
+
+    // Pass the event object to the service so it can send progress updates
+    const result = await getAIRetakePlan(event, coursesData, username, modelId);
+
+    if (modelConfig && modelConfig.type === 'freemium') {
+      await incrementAiCallCount();
+    }
+
+    event.sender.send('ai-planner-result', { success: true, data: result });
+
+  } catch (error) {
+    event.sender.send('ai-planner-error', { success: false, message: error.message });
+  }
+});
+
+ipcMain.handle('save-selected-model', async (event, modelId) => {
+  try {
+    const iniHelper = getIniHelper();
+    await iniHelper.set('ai', 'selectedModel', modelId);
+    return { success: true };
+  } catch (error) {
+    throw new Error('保存所选模型失败: ' + error.message);
+  }
+});
+
+ipcMain.handle('load-selected-model', async () => {
+  try {
+    const iniHelper = getIniHelper();
+    // Default to the new freemium model
+    const modelId = await iniHelper.get('ai', 'selectedModel', 'glm-4.5-flash'); 
+    return modelId;
+  } catch (error) {
+    throw new Error('读取所选模型失败: ' + error.message);
+  }
+});
+
+ipcMain.handle('get-ai-call-count', async () => {
+  return await getAiCallCount();
+});
+
+ipcMain.handle('increment-ai-call-count', async () => {
+  try {
+    await incrementAiCallCount();
+    return { success: true };
+  } catch (error) {
+    throw new Error('增加AI调用计数失败: ' + error.message);
+  }
+});
+
+ipcMain.handle('get-ai-models', () => {
+  return aiModels;
 });

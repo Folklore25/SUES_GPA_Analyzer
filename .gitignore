@@ -174,4 +174,4 @@ node_modules/
 courses.csv
 user-info.ini
 
-out/
+out//private/ 

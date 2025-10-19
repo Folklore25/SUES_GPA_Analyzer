@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { calculateCurrentGPA, getGpaTotalCredits } from '../utils/gpaCalculations';
 import { generateSchedule } from '../utils/scheduler';
 import ReactECharts from 'echarts-for-react';
@@ -14,6 +14,42 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Divider from '@mui/material/Divider';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CircularProgress from '@mui/material/CircularProgress';
+import AIPlanDisplay from './AIPlanDisplay';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
+const AILogDisplay = ({ logs }) => {
+  const logEl = useRef(null);
+
+  useEffect(() => {
+    if (logEl.current) {
+      logEl.current.scrollTop = logEl.current.scrollHeight;
+    }
+  }, [logs]);
+
+  return (
+    <Paper 
+      ref={logEl}
+      elevation={2}
+      sx={{
+        mt: 2,
+        p: 2,
+        height: 150,
+        overflowY: 'auto',
+        backgroundColor: '#000',
+        color: '#0f0',
+        fontFamily: 'monospace',
+        fontSize: '0.875rem',
+        border: '1px solid #333'
+      }}
+    >
+      {logs.map((log, index) => (
+        <div key={index}>{`> ${log}`}</div>
+      ))}
+    </Paper>
+  );
+};
 
 // Main component for the new Scheduling Workbench
 function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
@@ -21,6 +57,85 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
   const [numSemesters, setNumSemesters] = useState(2);
   const [strategy, setStrategy] = useState('conservative');
   const [plan, setPlan] = useState(null); // This will hold the entire result { schedule, heatmap }
+
+  // AI Planner State
+  const [isAIPlanning, setIsAIPlanning] = useState(false);
+  const [logMessages, setLogMessages] = useState([]);
+  const [aiPlan, setAiPlan] = useState(null);
+  const [aiError, setAiError] = useState('');
+  const [aiModels, setAiModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [aiCallCount, setAiCallCount] = useState(0);
+
+  const FREE_CALL_LIMIT = 200;
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const models = await window.electronAPI.getAiModels();
+        setAiModels(models);
+        const savedModel = await window.electronAPI.loadSelectedModel();
+        if (savedModel && models.some(m => m.id === savedModel)) {
+          setSelectedModel(savedModel);
+        } else if (models.length > 0) {
+          setSelectedModel(models[0].id);
+        }
+
+        const count = await window.electronAPI.getAiCallCount();
+        setAiCallCount(count);
+
+      } catch (error) {
+        console.error("Failed to load AI data:", error);
+        setAiError('无法加载AI模型或使用次数');
+      }
+    };
+    loadInitialData();
+
+    const handleLog = (message) => {
+      setLogMessages(prev => [...prev, message]);
+    };
+
+    const handleResult = (result) => {
+      if (result.success) {
+        setAiPlan(result.data);
+        const modelConfig = aiModels.find(m => m.id === selectedModel);
+        if (modelConfig && modelConfig.type === 'freemium') {
+          setAiCallCount(prev => prev + 1);
+        }
+      } else {
+        setAiError(result.message || '获取AI建议时发生未知错误。');
+      }
+      setIsAIPlanning(false);
+    };
+
+    const handleError = (error) => {
+      setAiError(error.message || '获取AI建议时发生未知错误。');
+      setIsAIPlanning(false);
+    };
+
+    window.electronAPI.onAiPlannerLog(handleLog);
+    window.electronAPI.onAiPlannerResult(handleResult);
+    window.electronAPI.onAiPlannerError(handleError);
+
+    return () => {
+      window.electronAPI.removeAllAiPlannerListeners();
+    };
+
+  }, [aiModels, selectedModel]);
+
+  const handleModelChange = (event) => {
+    const modelId = event.target.value;
+    setSelectedModel(modelId);
+    window.electronAPI.saveSelectedModel(modelId);
+  };
+
+  const handleGetAIPlan = () => {
+    setIsAIPlanning(true);
+    setAiError('');
+    setAiPlan(null);
+    setLogMessages([]);
+    window.electronAPI.startAiPlanner(courseData, selectedModel);
+  };
 
   const handleStrategyChange = (event, newStrategy) => {
     if (newStrategy !== null) {
@@ -123,7 +238,68 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
 
   return (
     <Box>
-      <Typography variant="h5" component="h2" gutterBottom>智能排课工作台</Typography>
+      {/* AI Planner Section */}
+      <Card component={Paper} sx={{ mb: 4, p: 2, background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)` }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'white', mb: 2 }}>
+            <AutoFixHighIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
+            <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+              AI 原生重修规划
+            </Typography>
+          </Box>
+          <Typography sx={{ color: 'primary.contrastText', mb: 2 }}>
+            让 AI 分析您的全部课程数据，综合考虑学分、绩点、开课学期等因素，为您量身打造最高效的 GPA 提升方案。
+          </Typography>
+
+          {aiModels.find(m => m.id === selectedModel)?.type === 'freemium' && (
+            <Typography sx={{ color: 'white', fontSize: '0.875rem', mb: 2 }}>
+              免费额度剩余: {Math.max(0, FREE_CALL_LIMIT - aiCallCount)} / {FREE_CALL_LIMIT} 次
+            </Typography>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <FormControl sx={{ minWidth: 200, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 1 }}>
+              <InputLabel id="model-select-label" sx={{ color: 'white' }}>选择模型</InputLabel>
+              <Select
+                labelId="model-select-label"
+                value={selectedModel}
+                label="选择模型"
+                onChange={handleModelChange}
+                sx={{ color: 'white', '.MuiSvgIcon-root': { color: 'white' } }}
+              >
+                {aiModels.map(model => (
+                  <MenuItem key={model.id} value={model.id}>{model.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button 
+              variant="contained"
+              size="large"
+              onClick={handleGetAIPlan}
+              disabled={isAIPlanning || !selectedModel || (aiModels.find(m => m.id === selectedModel)?.type === 'freemium' && aiCallCount >= FREE_CALL_LIMIT)}
+              sx={{
+                backgroundColor: 'white',
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: '#f0f0f0'
+                }
+              }}
+            >
+              {isAIPlanning ? <CircularProgress size={24} color="inherit" /> : '开始智能分析'}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {isAIPlanning && <AILogDisplay logs={logMessages} />}
+
+      {aiError && <Typography color="error" sx={{ my: 2 }}>{aiError}</Typography>}
+      {aiPlan && <AIPlanDisplay plan={aiPlan} />}
+
+      <Divider sx={{ my: 4 }}>或使用手动规划</Divider>
+
+      {/* Manual Planner Section */}
+      <Typography variant="h5" component="h2" gutterBottom>手动排课工作台</Typography>
       
       {retakePlan.length === 0 ? (
         <Paper sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mt: 4 }}>
@@ -197,9 +373,9 @@ function RetakePlanner({ courseData, retakePlan, onRemoveFromPlan }) {
               <Typography variant="h6" gutterBottom>生成的学习计划</Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: `repeat(${plan.schedule.length}, 1fr)` }, gap: 2, mb: 3 }}>
                 {plan.schedule.map(semesterPlan => (
-                  <Card component={Paper} key={semesterPlan.semester}>
+                  <Card component={Paper} key={semesterPlan.originalIndex}>
                     <CardContent>
-                      <Typography variant="h6">第 {semesterPlan.semester} 学期</Typography>
+                      <Typography variant="h6">{semesterPlan.semesterName}</Typography>
                       <Typography variant="body2" color="text.secondary">预估总课时: {semesterPlan.hours}</Typography>
                       <ul style={{ paddingLeft: 20, marginTop: 10 }}>
                         {semesterPlan.courses.map(course => (

@@ -45,7 +45,6 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
-    "axios": "^1.7.2",
     "cnpm": "^9.4.0",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
@@ -53,8 +52,10 @@
     "jsdom": "^26.1.0",
     "keytar": "^7.9.0",
     "mathjs": "^11.12.0",
+    "openai": "^4.55.0",
     "playwright": "^1.55.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zhipuai-sdk-nodejs-v4": "^0.1.12"
   }
 }

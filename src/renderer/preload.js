@@ -26,5 +26,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('download-progress');
     ipcRenderer.removeAllListeners('update-downloaded');
     ipcRenderer.removeAllListeners('update-error');
-  }
+  },
+
+  // AI Planner API
+  getAiModels: () => ipcRenderer.invoke('get-ai-models'),
+  saveApiKey: (apiKey, serviceName) => ipcRenderer.invoke('save-api-key', { apiKey, serviceName }),
+  loadApiKey: (serviceName) => ipcRenderer.invoke('load-api-key', serviceName),
+  startAiPlanner: (coursesData, modelId) => ipcRenderer.send('start-ai-planner', { coursesData, modelId }),
+  onAiPlannerLog: (callback) => ipcRenderer.on('ai-planner-log', (_event, value) => callback(value)),
+  onAiPlannerResult: (callback) => ipcRenderer.on('ai-planner-result', (_event, value) => callback(value)),
+  onAiPlannerError: (callback) => ipcRenderer.on('ai-planner-error', (_event, value) => callback(value)),
+  removeAllAiPlannerListeners: () => {
+    ipcRenderer.removeAllListeners('ai-planner-log');
+    ipcRenderer.removeAllListeners('ai-planner-result');
+    ipcRenderer.removeAllListeners('ai-planner-error');
+  },
+  saveSelectedModel: (modelId) => ipcRenderer.invoke('save-selected-model', modelId),
+  loadSelectedModel: () => ipcRenderer.invoke('load-selected-model'),
+  getAiCallCount: () => ipcRenderer.invoke('get-ai-call-count'),
+  incrementAiCallCount: () => ipcRenderer.invoke('increment-ai-call-count'),
 });

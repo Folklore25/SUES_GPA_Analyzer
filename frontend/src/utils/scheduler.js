@@ -1,3 +1,5 @@
+import { getCurrentSemesterInfo } from './semesterHelper.js';
+
 const getCourseHours = (course) => {
   const credits = parseFloat(course.course_weight) || 0;
   if (credits >= 4) return 48;
@@ -9,10 +11,37 @@ const getCourseHours = (course) => {
 
 const getCourseDurationInWeeks = (course) => {
   const credits = parseFloat(course.course_weight) || 0;
-  if (credits >= 3) return 16; // 4 and 3 credit courses
-  if (credits >= 1) return 8;  // 2 and 1 credit courses
+  if (credits >= 3) return 16;
+  if (credits >= 1) return 8;
   return 0;
 };
+
+const semesterNumToName = (num) => {
+    const year = Math.ceil(num / 2);
+    const term = num % 2 === 1 ? '第一学期' : '第二学期';
+    const yearStr = ['一', '二', '三', '四', '五'][year - 1] || year;
+    return `大${yearStr}${term}`;
+}
+
+// Checks if a course is available in a given semester type (1 for Fall, 2 for Spring)
+function isCourseAvailable(course, semesterType) {
+    const offered = course.course_semester;
+    if (offered === '--') {
+        return true;
+    }
+
+    // Parse numbers from strings like '1', '1,2', '(3,4)'
+    const offeredNums = (offered.match(/\d+/g) || []).map(Number);
+    if (offeredNums.length === 0) {
+        return false; // No valid semester found
+    }
+
+    if (semesterType === 1) { // Fall semester
+        return offeredNums.some(n => n % 2 === 1);
+    } else { // Spring semester
+        return offeredNums.some(n => n % 2 === 0);
+    }
+}
 
 export function generateSchedule(courses, numSemesters, strategy) {
   const coursesWithHours = courses.map(c => ({ 
@@ -20,68 +49,67 @@ export function generateSchedule(courses, numSemesters, strategy) {
     hours: getCourseHours(c),
     duration: getCourseDurationInWeeks(c),
   }));
-  coursesWithHours.sort((a, b) => b.hours - a.hours); // Sort by hours descending
+  coursesWithHours.sort((a, b) => b.hours - a.hours);
 
-  let semesters;
+  // 1. Generate the sequence of upcoming semesters
+  const semesterInfo = getCurrentSemesterInfo();
+  let nextSemesterType = semesterInfo.next;
+  let nextSemesterNum = semesterInfo.current; // A bit tricky, we need to find the lowest possible semester number to start from
 
+  const semesters = Array.from({ length: numSemesters }, (_, i) => {
+      const semesterType = (nextSemesterType + i) % 2 === 0 ? 2 : 1;
+      // This logic for semester number is simplified and might not be academically perfect
+      // but it provides a reasonable progression for planning.
+      nextSemesterNum += (i > 0 && semesterType === 1) ? 1 : 0;
+      return {
+          semesterType: semesterType,
+          semesterName: semesterNumToName(nextSemesterNum + i + 1), // A plausible future semester name
+          courses: [],
+          hours: 0
+      };
+  });
+
+  // 2. Place courses according to strategy and availability
   switch (strategy) {
     case 'burnout':
-      // Ignores numSemesters, tries to use as few semesters as possible with a high load.
-      semesters = [];
-      const burnoutThreshold = 192; // Approx. 12 hours/week for 16 weeks
+      // This strategy is complex to reconcile with availability, so we use a simplified approach
+      // It will just try to fit courses wherever possible, respecting availability.
+    case 'aggressive':
       coursesWithHours.forEach(course => {
         let placed = false;
         for (const semester of semesters) {
-          if (semester.hours + course.hours <= burnoutThreshold) {
+          if (isCourseAvailable(course, semester.semesterType)) {
             semester.courses.push(course);
             semester.hours += course.hours;
             placed = true;
-            break;
+            break; // Place in the first available semester
           }
         }
         if (!placed) {
-          semesters.push({ courses: [course], hours: course.hours });
-        }
-      });
-      break;
-
-    case 'aggressive':
-      // Front-loads into the given numSemesters.
-      semesters = Array.from({ length: numSemesters }, () => ({ courses: [], hours: 0 }));
-      const aggressiveThreshold = 144; // Approx. 9 hours/week for 16 weeks
-      coursesWithHours.forEach(course => {
-        let placed = false;
-        for (let i = 0; i < semesters.length; i++) {
-          if (semesters[i].hours + course.hours <= aggressiveThreshold) {
-            semesters[i].courses.push(course);
-            semesters[i].hours += course.hours;
-            placed = true;
-            break;
-          }
-        }
-        // If it doesn't fit in any "roomy" semester, place it in the one with the fewest hours.
-        if (!placed) {
-          const targetSemester = semesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
-          targetSemester.courses.push(course);
-          targetSemester.hours += course.hours;
+          // If not available in any future semester, add to a separate list (or handle as error)
+          console.warn(`Course ${course.course_name} could not be scheduled in the next ${numSemesters} semesters.`);
         }
       });
       break;
 
     case 'conservative':
     default:
-      // Distributes evenly across the given numSemesters.
-      semesters = Array.from({ length: numSemesters }, () => ({ courses: [], hours: 0 }));
+      // Distributes evenly, respecting availability
       coursesWithHours.forEach(course => {
-        const targetSemester = semesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
-        targetSemester.courses.push(course);
-        targetSemester.hours += course.hours;
+        const availableSemesters = semesters.filter(s => isCourseAvailable(course, s.semesterType));
+        if (availableSemesters.length > 0) {
+            const targetSemester = availableSemesters.reduce((prev, curr) => curr.hours < prev.hours ? curr : prev);
+            targetSemester.courses.push(course);
+            targetSemester.hours += course.hours;
+        } else {
+            console.warn(`Course ${course.course_name} could not be scheduled in the next ${numSemesters} semesters.`);
+        }
       });
       break;
   }
 
   const finalSchedule = semesters
-    .map((s, i) => ({ ...s, semester: i + 1 }))
+    .map((s, i) => ({ ...s, originalIndex: i }))
     .filter(s => s.courses.length > 0);
 
   // --- Heatmap Data Generation ---
@@ -89,8 +117,8 @@ export function generateSchedule(courses, numSemesters, strategy) {
   const semesterLabels = [];
   const weekLabels = Array.from({ length: 16 }, (_, i) => `第 ${i + 1} 周`);
 
-  finalSchedule.forEach((semester, semesterIndex) => {
-    semesterLabels.push(`第 ${semester.semester} 学期`);
+  finalSchedule.forEach((semester) => {
+    semesterLabels.push(semester.semesterName);
     const weeklyData = Array.from({ length: 16 }, () => ({ hours: 0, courses: [] }));
 
     semester.courses.forEach(course => {
@@ -103,9 +131,8 @@ export function generateSchedule(courses, numSemesters, strategy) {
 
     weeklyData.forEach((weekData, weekIndex) => {
       if (weekData.hours > 0) {
-        // ECharts heatmap data format: [x, y, value]
         const value = parseFloat(weekData.hours.toFixed(1));
-        heatmapData.push([weekIndex, semesterIndex, value]);
+        heatmapData.push([weekIndex, semesterLabels.length - 1, value]);
       }
     });
   });
